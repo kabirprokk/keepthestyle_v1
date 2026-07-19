@@ -24,11 +24,14 @@ class SidebarManager {
 
     renderCategories() {
         this.nav.innerHTML = '';
-        Object.keys(this.categories).forEach(name => {
+        const preferredOrder = ['Basic HTML', 'Shapes', 'Typography', 'Layout', 'Forms', 'Media', 'Buttons', 'Navigation'];
+        Object.keys(this.categories).sort((a, b) => preferredOrder.indexOf(a) - preferredOrder.indexOf(b)).forEach(name => {
             const btn = document.createElement('button');
             btn.className = `category-btn ${name === this.currentCategory ? 'active' : ''}`;
-            btn.textContent = name;
+            const icon = name === 'Shapes' ? '◆' : this.categories[name].icon || '•';
+            btn.innerHTML = `<span class="category-icon">${icon}</span><span>${name}</span>`;
             btn.dataset.category = name;
+            btn.title = `Browse ${name}`;
             btn.addEventListener('click', () => {
                 this.currentCategory = name;
                 this.renderCategories();
@@ -57,6 +60,8 @@ class SidebarManager {
         div.className = 'element-item';
         div.draggable = true;
         div.dataset.tag = element.tag;
+        const shapeNames = ['Rectangle', 'Rounded Rectangle', 'Circle', 'Pill', 'Line', 'Triangle', 'Diamond', 'Star', 'Blob'];
+        if (shapeNames.includes(element.name)) div.classList.add('shape-item');
         
         const icon = document.createElement('span');
         icon.className = 'element-icon';

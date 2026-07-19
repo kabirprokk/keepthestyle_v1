@@ -34,12 +34,12 @@
 
 .sidebar-nav {
     padding: 8px 12px;
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 4px;
     border-bottom: 1px solid var(--color-border);
-    overflow-y: auto;
-    max-height: 160px;
+    overflow: visible;
+    max-height: none;
 }
 .sidebar-nav.searching { opacity: .45; pointer-events: none; }
 
@@ -54,8 +54,16 @@
     border-radius: 4px;
     cursor: pointer;
     transition: all var(--transition-speed) ease;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
     white-space: nowrap;
+    overflow: hidden;
+    text-align: left;
 }
+.category-btn .category-icon { width: 15px; flex: 0 0 15px; color: currentColor; text-align: center; font-size: 11px; }
+.category-btn span:last-child { overflow: hidden; text-overflow: ellipsis; }
 
 .category-btn:hover {
     background: var(--color-light-gray);
@@ -89,6 +97,9 @@
 .element-item:hover {
     background: var(--color-light-gray);
 }
+.element-item.shape-item { min-height: 42px; border: 1px solid transparent; }
+.element-item.shape-item .element-icon { color: var(--color-accent); font-size: 19px; }
+.element-item.shape-item:hover { border-color: color-mix(in srgb, var(--color-accent) 22%, var(--color-border)); background: color-mix(in srgb, var(--color-accent) 6%, var(--color-white)); }
 .element-add { opacity: 0; margin-left: auto; width: 24px; height: 24px; border: 1px solid var(--color-border); border-radius: 5px; background: var(--color-white); color: var(--color-accent); font-size: 16px; cursor: pointer; transition: opacity 120ms, background 120ms; }
 .element-item:hover .element-add, .element-add:focus { opacity: 1; }
 .element-add:hover { color: #fff; background: var(--color-accent); border-color: var(--color-accent); }
