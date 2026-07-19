@@ -1,0 +1,115 @@
+/* Code Panel Styles */
+#code-panel {
+    position: relative;
+    height: var(--code-panel-height);
+    min-height: var(--code-panel-height);
+    background: var(--color-white);
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+#code-panel.collapsed { height: 40px !important; min-height: 40px; }
+#code-panel.collapsed .code-editor { display: none; }
+.code-resize-handle { position: absolute; left: 0; right: 0; top: -3px; height: 6px; z-index: 10; cursor: ns-resize; }
+.code-resize-handle:hover { background: color-mix(in srgb, var(--color-accent) 35%, transparent); }
+.code-panel-toggle { width: 26px; height: 24px; border: 0; border-radius: 4px; background: transparent; color: var(--color-dark-gray); cursor: pointer; }
+.code-panel-toggle:hover { background: var(--color-light-gray); color: var(--color-black); }
+
+.code-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 16px;
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+}
+
+.code-tabs {
+    display: flex;
+    gap: 2px;
+}
+
+.code-tab {
+    padding: 6px 16px;
+    font-family: var(--font-family);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-dark-gray);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all var(--transition-speed) ease;
+}
+
+.code-tab:hover {
+    color: var(--color-black);
+}
+
+.code-tab.active {
+    color: var(--color-accent);
+    border-bottom-color: var(--color-accent);
+}
+
+.code-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.code-btn {
+    padding: 4px 12px;
+    font-family: var(--font-family);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-dark-gray);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all var(--transition-speed) ease;
+}
+
+.code-btn:hover {
+    background: var(--color-light-gray);
+    border-color: var(--color-border);
+}
+
+.code-btn:active {
+    background: var(--color-gray);
+}
+
+.code-editor {
+    flex: 1;
+    overflow: auto;
+    padding: 12px 16px;
+    background: #FAFAFA;
+    position: relative;
+}
+
+.code-editor code {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--color-black);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    display: block;
+}
+
+.code-editor .hl-tag {
+    color: #4D6BFF;
+}
+
+.code-editor .hl-attribute {
+    color: #7B61FF;
+}
+
+.code-editor .hl-string {
+    color: #4CAF50;
+}
+
+.code-editor .hl-comment {
+    color: #9E9E9E;
+    font-style: italic;
+}

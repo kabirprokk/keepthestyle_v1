@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KeepTheStyle - Visual CSS Editor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=Montserrat:wght@300;400;500;600;700&family=Oswald:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/toolbar.css">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/canvas.css">
+    <link rel="stylesheet" href="css/properties.css">
+    <link rel="stylesheet" href="css/code-panel.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Top Toolbar -->
+        <header id="toolbar">
+            <div class="toolbar-left">
+                <button class="toolbar-btn" title="New Project">📄</button>
+                <button class="toolbar-btn" title="Open">📂</button>
+                <button class="toolbar-btn" title="Save">💾</button>
+                <span class="toolbar-divider"></span>
+                <button class="toolbar-btn" title="Undo">↩</button>
+                <button class="toolbar-btn" title="Redo">↪</button>
+                <span class="toolbar-divider"></span>
+                <button class="toolbar-btn" title="Import HTML">📥</button>
+                <button class="toolbar-btn" title="Export">📤</button>
+                <span class="toolbar-divider"></span>
+                <button class="toolbar-btn" title="Preview">▶</button>
+            </div>
+            <div class="toolbar-center">
+                <input class="project-name" value="Untitled Project" aria-label="Project name" maxlength="100">
+            </div>
+            <div class="toolbar-right">
+                <button class="toolbar-btn" title="Dark Mode">🌙</button>
+                <button class="toolbar-btn" title="Settings">⚙</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main id="main-content">
+            <!-- Left Sidebar -->
+            <aside id="left-sidebar">
+                <div class="sidebar-search">
+                    <input type="text" placeholder="Search elements...">
+                </div>
+                <nav class="sidebar-nav"></nav>
+                <div class="sidebar-elements"></div>
+            </aside>
+
+            <!-- Center Canvas -->
+            <section id="canvas-container">
+                <div class="canvas-controls">
+                    <button class="zoom-btn" data-action="zoom-in">+</button>
+                    <span class="zoom-level">100%</span>
+                    <button class="zoom-btn" data-action="zoom-out">−</button>
+                    <button class="zoom-btn" data-action="fit-screen">⊡</button>
+                    <span class="toolbar-divider"></span>
+                    <button class="canvas-btn" data-action="grid">⊞</button>
+                    <button class="canvas-btn" data-action="guidelines">⊟</button>
+                    <button class="canvas-btn" data-action="rulers">⊡</button>
+                    <span class="toolbar-divider"></span>
+                    <select class="page-size-select">
+                        <option value="1920x1080">Desktop (1920x1080)</option>
+                        <option value="1366x768">Laptop (1366x768)</option>
+                        <option value="1024x768">Tablet (1024x768)</option>
+                        <option value="768x1024">Mobile (768x1024)</option>
+                        <option value="375x812">Mobile (375x812)</option>
+                    </select>
+                </div>
+                <div class="canvas-wrapper">
+                    <div class="canvas-page"></div>
+                </div>
+            </section>
+
+            <!-- Right Sidebar -->
+            <aside id="right-sidebar">
+                <div class="properties-header">
+                    <h3>Properties</h3>
+                    <button class="clear-selection">✕</button>
+                </div>
+                <div class="properties-content"></div>
+            </aside>
+        </main>
+
+        <!-- Code Panel -->
+        <footer id="code-panel">
+            <div class="code-panel-header">
+                <div class="code-tabs">
+                    <button class="code-tab active" data-tab="html">HTML</button>
+                    <button class="code-tab" data-tab="css">CSS</button>
+                    <button class="code-tab" data-tab="javascript">JavaScript</button>
+                </div>
+                <div class="code-actions">
+                    <button class="code-btn" data-action="copy">Copy</button>
+                    <button class="code-btn" data-action="download">Download</button>
+                    <button class="code-btn" data-action="clear">Clear</button>
+                    <button class="code-btn" data-action="format">Format</button>
+                </div>
+            </div>
+            <div class="code-editor">
+                <pre><code class="language-html"></code></pre>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/elements.js"></script>
+    <script src="js/shortcuts.js"></script>
+    <script src="js/sidebar.js"></script>
+    <script src="js/canvas.js"></script>
+    <script src="js/properties.js"></script>
+    <script src="js/code-panel.js"></script>
+    <script src="js/toolbar.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
