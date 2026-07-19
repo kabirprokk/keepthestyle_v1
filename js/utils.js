@@ -63,6 +63,51 @@ function safeDomId(value, fallback = 'element') {
     return clean || fallback;
 }
 
+function createZipBlob(files) {
+    const encoder = new TextEncoder();
+    const table = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+        let value = n;
+        for (let bit = 0; bit < 8; bit++) value = (value & 1) ? (0xEDB88320 ^ (value >>> 1)) : (value >>> 1);
+        table[n] = value >>> 0;
+    }
+    const crc32 = bytes => {
+        let crc = 0xFFFFFFFF;
+        bytes.forEach(byte => { crc = table[(crc ^ byte) & 0xFF] ^ (crc >>> 8); });
+        return (crc ^ 0xFFFFFFFF) >>> 0;
+    };
+    const write16 = (view, offset, value) => view.setUint16(offset, value, true);
+    const write32 = (view, offset, value) => view.setUint32(offset, value >>> 0, true);
+    const localParts = [];
+    const centralParts = [];
+    let offset = 0;
+    files.forEach(file => {
+        const name = encoder.encode(file.name.replace(/\\/g, '/'));
+        const data = typeof file.content === 'string' ? encoder.encode(file.content) : file.content;
+        const crc = crc32(data);
+        const local = new Uint8Array(30 + name.length);
+        const localView = new DataView(local.buffer);
+        write32(localView, 0, 0x04034B50); write16(localView, 4, 20); write16(localView, 6, 0x0800);
+        write32(localView, 14, crc); write32(localView, 18, data.length); write32(localView, 22, data.length); write16(localView, 26, name.length);
+        local.set(name, 30);
+        localParts.push(local, data);
+
+        const central = new Uint8Array(46 + name.length);
+        const centralView = new DataView(central.buffer);
+        write32(centralView, 0, 0x02014B50); write16(centralView, 4, 20); write16(centralView, 6, 20); write16(centralView, 8, 0x0800);
+        write32(centralView, 16, crc); write32(centralView, 20, data.length); write32(centralView, 24, data.length); write16(centralView, 28, name.length); write32(centralView, 42, offset);
+        central.set(name, 46);
+        centralParts.push(central);
+        offset += local.length + data.length;
+    });
+    const centralSize = centralParts.reduce((sum, part) => sum + part.length, 0);
+    const end = new Uint8Array(22);
+    const endView = new DataView(end.buffer);
+    write32(endView, 0, 0x06054B50); write16(endView, 8, files.length); write16(endView, 10, files.length);
+    write32(endView, 12, centralSize); write32(endView, 16, offset);
+    return new Blob([...localParts, ...centralParts, end], { type: 'application/zip' });
+}
+
 function getInteractionAnimationCSS() {
     return `
 .kts-animate { animation-duration: .6s; animation-fill-mode: both; }
@@ -154,6 +199,9 @@ function generateSiteRuntime(elements, pages = [], options = {}) {
 })();`;
 }
 
+// Backward-compatible alias for projects or extensions using the original helper.
+generateInteractionRuntime = generateSiteRuntime;
+
 // Deep clone object
 function deepClone(obj) {
     try {
@@ -209,7 +257,8 @@ function showChoiceDialog(title, message, choices) {
         body.textContent = message;
         const actions = document.createElement('div');
         actions.className = 'app-dialog-actions';
-        const close = value => { backdrop.remove(); resolve(value); };
+        const onKeyDown = event => { if (event.key === 'Escape') close(null); };
+        const close = value => { document.removeEventListener('keydown', onKeyDown); backdrop.remove(); resolve(value); };
         choices.forEach(choice => {
             const button = document.createElement('button');
             button.textContent = choice.label;
@@ -220,6 +269,7 @@ function showChoiceDialog(title, message, choices) {
         dialog.append(heading, body, actions);
         backdrop.appendChild(dialog);
         document.body.appendChild(backdrop);
+        document.addEventListener('keydown', onKeyDown);
         backdrop.addEventListener('mousedown', e => { if (e.target === backdrop) close(null); });
         dialog.querySelector('button')?.focus();
     });

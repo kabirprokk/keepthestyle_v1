@@ -5,6 +5,9 @@
 
 document.addEventListener('DOMContentLoaded', function() {
     try {
+        document.querySelectorAll('button[title]').forEach(button => {
+            if (!button.getAttribute('aria-label')) button.setAttribute('aria-label', button.title);
+        });
         // Make store globally available
         window.store = window.store || new Store();
         
@@ -15,6 +18,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const codePanel = new CodePanel(document.getElementById('code-panel'));
         const toolbar = new ToolbarManager(document.getElementById('toolbar'));
         const shortcuts = new KeyboardShortcuts();
+        document.querySelectorAll('button[title]').forEach(button => {
+            if (!button.getAttribute('aria-label')) button.setAttribute('aria-label', button.title);
+        });
         
         // Expose for debugging
         window.keepTheStyle = {
@@ -28,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         
         console.log('🚀 KeepTheStyle initialized successfully!');
-        console.log('Version: 1.0.0');
+        console.log('Version: 1.4.0');
         
         // Add initial demo elements if canvas is empty
         const state = window.store.getState();

@@ -39,6 +39,7 @@ class Store {
         // Load from localStorage if available
         this.loadFromStorage();
         this.ensurePageModel();
+        if (!this.state.history.length) this.saveHistory();
         
         // Auto-save every 5 seconds
         this.autoSaveInterval = setInterval(() => this.saveToStorage(), 5000);
@@ -111,6 +112,7 @@ class Store {
             this.state.history.shift();
             this.state.historyIndex--;
         }
+        this.syncPageHistory();
     }
 
     undo() {
@@ -120,6 +122,7 @@ class Store {
             const snapshot = this.state.history[this.state.historyIndex];
             this.state.elements = JSON.parse(snapshot);
             this.syncActivePage();
+            this.syncPageHistory();
             this.state.lastUpdate = Date.now();
             this.notify();
             this.saveToStorage();
@@ -135,6 +138,7 @@ class Store {
             const snapshot = this.state.history[this.state.historyIndex];
             this.state.elements = JSON.parse(snapshot);
             this.syncActivePage();
+            this.syncPageHistory();
             this.state.lastUpdate = Date.now();
             this.notify();
             this.saveToStorage();
@@ -290,19 +294,27 @@ class Store {
 
     ensurePageModel() {
         if (!Array.isArray(this.state.pages) || !this.state.pages.length) {
-            const page = { id: 'page_home', name: 'Home', slug: 'index', elements: this.state.elements };
+            const page = { id: 'page_home', name: 'Home', slug: 'index', elements: this.state.elements, history: [], historyIndex: -1 };
             this.state.pages = [page];
             this.state.activePageId = page.id;
         }
         let active = this.state.pages.find(page => page.id === this.state.activePageId) || this.state.pages[0];
         active.elements = Array.isArray(active.elements) ? active.elements : [];
+        active.history = Array.isArray(active.history) ? active.history : [];
+        active.historyIndex = Number.isInteger(active.historyIndex) ? active.historyIndex : active.history.length - 1;
         this.state.activePageId = active.id;
         this.state.elements = active.elements;
+        if (active.history.length) { this.state.history = active.history; this.state.historyIndex = active.historyIndex; }
     }
 
     syncActivePage() {
         const page = this.state.pages.find(item => item.id === this.state.activePageId);
         if (page) page.elements = this.state.elements;
+    }
+
+    syncPageHistory() {
+        const page = this.state.pages.find(item => item.id === this.state.activePageId);
+        if (page) { page.history = this.state.history; page.historyIndex = this.state.historyIndex; }
     }
 
     addPage(name = 'New Page') {
@@ -311,7 +323,7 @@ class Store {
         let slug = base;
         let suffix = 2;
         while (this.state.pages.some(page => page.slug === slug)) slug = `${base}-${suffix++}`;
-        const page = { id: this.generatePageId(), name, slug, elements: [] };
+        const page = { id: this.generatePageId(), name, slug, elements: [], history: [], historyIndex: -1 };
         this.state.pages.push(page);
         this.state.activePageId = page.id;
         this.state.elements = page.elements;
@@ -323,7 +335,7 @@ class Store {
     }
 
     resetProject() {
-        const page = { id: 'page_home', name: 'Home', slug: 'index', elements: [] };
+        const page = { id: 'page_home', name: 'Home', slug: 'index', elements: [], history: [], historyIndex: -1 };
         this.state.pages = [page];
         this.state.activePageId = page.id;
         this.state.elements = page.elements;
@@ -338,14 +350,16 @@ class Store {
         if (id === this.state.activePageId) return;
         this.flushHistory();
         this.syncActivePage();
+        this.syncPageHistory();
         const page = this.state.pages.find(item => item.id === id);
         if (!page) return;
         this.state.activePageId = page.id;
         this.state.elements = page.elements;
         this.state.selectedElements = [];
-        this.state.history = [];
-        this.state.historyIndex = -1;
-        this.saveHistory(); this.notify(); this.saveToStorage();
+        this.state.history = Array.isArray(page.history) ? page.history : [];
+        this.state.historyIndex = Number.isInteger(page.historyIndex) ? page.historyIndex : this.state.history.length - 1;
+        if (!this.state.history.length) this.saveHistory();
+        this.notify(); this.saveToStorage();
     }
 
     renamePage(id, name) {
@@ -387,12 +401,16 @@ class Store {
         if (this.updateHistoryTimer) this.saveHistory();
     }
 
+    getSerializablePages() {
+        return this.state.pages.map(({ id, name, slug, elements }) => ({ id, name, slug, elements }));
+    }
+
     // Local Storage
     saveToStorage() {
         try {
             const data = {
                 elements: this.state.elements,
-                pages: this.state.pages,
+                pages: this.getSerializablePages(),
                 activePageId: this.state.activePageId,
                 projectName: this.state.projectName,
                 pageSize: this.state.pageSize,
@@ -426,7 +444,7 @@ class Store {
     exportProject() {
         return {
             elements: this.state.elements,
-            pages: this.state.pages,
+            pages: this.getSerializablePages(),
             activePageId: this.state.activePageId,
             projectName: this.state.projectName,
             pageSize: this.state.pageSize,

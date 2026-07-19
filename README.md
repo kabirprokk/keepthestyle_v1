@@ -16,6 +16,8 @@ Open `index.html` in a modern browser. No build step is required.
 - No-code triggers for clicks, hover, page load, and scroll-into-view behavior
 - Adjustable animation presets with duration, delay, easing, and repeat controls
 - HTML, CSS, and JavaScript preview/export
+- One-click production ZIP export containing every connected website page
+- Independent undo/redo history for each project page
 - Local project persistence and `.ktstyle` project files
 - Light and dark workspace themes
 

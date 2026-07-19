@@ -223,7 +223,7 @@ class ToolbarManager {
 
     async exportProject() {
         const exportType = await showChoiceDialog('Export project', 'Choose the format you want to generate.', [
-            { label: 'HTML', value: '1', primary: true }, { label: 'CSS', value: '2' }, { label: 'Project file', value: 'project' }, { label: 'Cancel', value: null }
+            { label: 'Website ZIP', value: '3', primary: true }, { label: 'HTML pages', value: '1' }, { label: 'CSS', value: '2' }, { label: 'Project file', value: 'project' }, { label: 'Cancel', value: null }
         ]);
         if (exportType === 'project') this.saveProject();
         else this.showExportDialog(exportType);
@@ -234,6 +234,8 @@ class ToolbarManager {
             this.exportHTML();
         } else if (exportType === '2') {
             this.exportCSS();
+        } else if (exportType === '3') {
+            this.exportZIP();
         }
     }
 
@@ -363,8 +365,22 @@ body {
     }
 
     exportZIP() {
-        // Show a notification that ZIP export is coming soon
-        this.showNotification('ZIP export coming soon!');
+        const state = this.store.getState();
+        const files = state.pages.map(page => ({
+            name: page.slug === 'index' ? 'index.html' : `${safeFilename(page.slug)}.html`,
+            content: this.generateFullHTML(page.elements)
+        }));
+        files.push({ name: 'README.txt', content: `${state.projectName}\n\nExported with KeepTheStyle. Open index.html to view the website.` });
+        const blob = createZipBlob(files);
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${safeFilename(state.projectName)}-website.zip`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        this.showNotification(`Website ZIP created with ${state.pages.length} page${state.pages.length === 1 ? '' : 's'}`);
     }
 
     downloadFile(content, filename, mimeType) {

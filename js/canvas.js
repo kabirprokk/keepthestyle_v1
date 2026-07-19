@@ -384,6 +384,9 @@ class CanvasManager {
             e.stopPropagation();
             this.startInlineEditing(el, element);
         });
+        if (['a', 'button', 'input', 'select', 'textarea'].includes(element.tag)) {
+            el.addEventListener('click', e => e.preventDefault());
+        }
         el.addEventListener('contextmenu', e => {
             e.preventDefault();
             e.stopPropagation();

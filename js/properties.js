@@ -849,7 +849,10 @@ class PropertiesManager {
         let max = propConfig.max;
         let step = propConfig.step;
         
-        if (min === undefined) min = 0;
+        if (min === undefined) {
+            const negativeKeys = ['margin', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft', 'top', 'left', 'right', 'bottom', 'shadowX', 'shadowY', 'letterSpacing'];
+            min = negativeKeys.includes(propConfig.key) ? -250 : 0;
+        }
         
         if (max === undefined) {
             if (unit === '%') {
@@ -862,7 +865,7 @@ class PropertiesManager {
             } else {
                 // px, etc.
                 const k = propConfig.key;
-                if (k === 'width' || k === 'height' || k === 'minWidth' || k === 'maxWidth' || k === 'top' || k === 'left' || k === 'right' || k === 'bottom') {
+                if (['width', 'height', 'minWidth', 'maxWidth', 'top', 'left', 'right', 'bottom', 'canvasX', 'canvasY', 'canvasWidth', 'canvasHeight'].includes(k)) {
                     max = 2000;
                 } else if (k === 'padding' || k === 'margin' || k === 'gap' || k === 'paddingTop' || k === 'paddingRight' || k === 'paddingBottom' || k === 'paddingLeft' || k === 'marginTop' || k === 'marginRight' || k === 'marginBottom' || k === 'marginLeft' || k === 'shadowX' || k === 'shadowY' || k === 'shadowBlur' || k === 'shadowSpread') {
                     max = 250;
