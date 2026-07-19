@@ -85,6 +85,7 @@ class SidebarManager {
             e.dataTransfer.effectAllowed = 'copy';
             e.dataTransfer.setData('text/plain', JSON.stringify({
                 tag: element.tag,
+                name: element.name,
                 defaults: element.defaults
             }));
         });
@@ -98,8 +99,8 @@ class SidebarManager {
         const newElement = {
             tag: element.tag,
             name: element.name,
-            position: { x: Math.max(0, page.width / 2 - 100), y: Math.max(0, page.height / 2 - 75) },
-            size: { width: 200, height: 150 },
+            position: { x: Math.max(0, page.width / 2 - (defaults.size?.width || 200) / 2), y: Math.max(0, page.height / 2 - (defaults.size?.height || 150) / 2) },
+            size: defaults.size || { width: 200, height: 150 },
             styles: defaults.styles || {},
             content: defaults.content || '',
             attributes: defaults.attributes || {}

@@ -40,6 +40,20 @@ const ELEMENTS_CATEGORIES = {
             { name: 'Main', tag: 'main', icon: '▮' },
         ]
     },
+    'Shapes': {
+        icon: '◆',
+        elements: [
+            { name: 'Rectangle', tag: 'div', icon: '▭', size: { width: 220, height: 140 }, styles: { backgroundColor: '#4D6BFF', border: 'none', borderRadius: '0', padding: '0' }, content: '' },
+            { name: 'Rounded Rectangle', tag: 'div', icon: '▢', size: { width: 220, height: 140 }, styles: { backgroundColor: '#7B61FF', border: 'none', borderRadius: '24px', padding: '0' }, content: '' },
+            { name: 'Circle', tag: 'div', icon: '●', size: { width: 150, height: 150 }, styles: { backgroundColor: '#FF6B6B', border: 'none', borderRadius: '50%', padding: '0' }, content: '' },
+            { name: 'Pill', tag: 'div', icon: '▬', size: { width: 220, height: 80 }, styles: { backgroundColor: '#20C997', border: 'none', borderRadius: '999px', padding: '0' }, content: '' },
+            { name: 'Line', tag: 'div', icon: '━', size: { width: 240, height: 4 }, styles: { backgroundColor: '#202124', border: 'none', borderRadius: '999px', padding: '0' }, content: '' },
+            { name: 'Triangle', tag: 'div', icon: '▲', size: { width: 160, height: 150 }, styles: { backgroundColor: '#FFB020', border: 'none', padding: '0', clipPath: 'polygon(50% 0%, 100% 100%, 0% 100%)' }, content: '' },
+            { name: 'Diamond', tag: 'div', icon: '◆', size: { width: 150, height: 150 }, styles: { backgroundColor: '#E64980', border: 'none', padding: '0', clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' }, content: '' },
+            { name: 'Star', tag: 'div', icon: '★', size: { width: 170, height: 170 }, styles: { backgroundColor: '#FFD43B', border: 'none', padding: '0', clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 94%, 50% 72%, 21% 94%, 32% 57%, 2% 35%, 39% 35%)' }, content: '' },
+            { name: 'Blob', tag: 'div', icon: '⬟', size: { width: 190, height: 170 }, styles: { backgroundColor: '#15AABF', border: 'none', padding: '0', borderRadius: '63% 37% 54% 46% / 55% 48% 52% 45%' }, content: '' }
+        ]
+    },
     'Forms': {
         icon: '✓',
         elements: [
@@ -204,6 +218,9 @@ function getAllElements() {
                 tag: normalizedTag,
                 defaults: {
                     ...getElementDefaults(normalizedTag),
+                    size: el.size || { width: 200, height: 150 },
+                    styles: { ...getElementDefaults(normalizedTag).styles, ...(el.styles || {}) },
+                    content: el.content !== undefined ? el.content : getElementDefaults(normalizedTag).content,
                     attributes: { ...getElementDefaults(normalizedTag).attributes, ...(el.name === 'Checkbox' ? { type: 'checkbox' } : {}), ...(el.name === 'Radio' ? { type: 'radio' } : {}) }
                 }
             });
@@ -223,6 +240,9 @@ function getCategoriesWithElements() {
                 tag: el.tag.startsWith('input[') ? 'input' : el.tag,
                 defaults: {
                     ...getElementDefaults(el.tag.startsWith('input[') ? 'input' : el.tag),
+                    size: el.size || { width: 200, height: 150 },
+                    styles: { ...getElementDefaults(el.tag.startsWith('input[') ? 'input' : el.tag).styles, ...(el.styles || {}) },
+                    content: el.content !== undefined ? el.content : getElementDefaults(el.tag.startsWith('input[') ? 'input' : el.tag).content,
                     attributes: {
                         ...getElementDefaults(el.tag.startsWith('input[') ? 'input' : el.tag).attributes,
                         ...(el.name === 'Checkbox' ? { type: 'checkbox' } : {}),

@@ -149,10 +149,12 @@ class CanvasManager {
                     const y = (e.clientY - pageRect.top) / this.zoomLevel;
                     
                     const defaults = elementData.defaults || {};
+                    const defaultSize = defaults.size || { width: 200, height: 150 };
                     const newElement = {
                         tag: elementData.tag,
-                        position: { x: Math.max(0, x - 100), y: Math.max(0, y - 75) },
-                        size: { width: 200, height: 150 },
+                        name: elementData.name,
+                        position: { x: Math.max(0, x - defaultSize.width / 2), y: Math.max(0, y - defaultSize.height / 2) },
+                        size: defaultSize,
                         styles: defaults.styles || {},
                         content: defaults.content || '',
                         attributes: defaults.attributes || {}
