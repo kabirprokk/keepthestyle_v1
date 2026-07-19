@@ -232,3 +232,19 @@
 .property-textarea:focus {
     border-color: var(--color-accent);
 }
+
+.interactions-editor { display: flex; flex-direction: column; gap: 9px; }
+.interactions-empty { display: flex; flex-direction: column; gap: 4px; padding: 15px 12px; border: 1px dashed var(--color-border); border-radius: 8px; color: var(--color-dark-gray); text-align: center; font-size: 10px; }
+.interactions-empty strong { color: var(--color-black); font-size: 12px; }
+.interaction-card { padding: 10px; border: 1px solid var(--color-border); border-radius: 9px; background: color-mix(in srgb, var(--color-light-gray) 55%, var(--color-white)); box-shadow: 0 1px 2px rgba(0,0,0,.025); }
+.interaction-card-heading { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; color: var(--color-black); font-size: 10px; }
+.interaction-number { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--color-accent); color: #fff; font-size: 9px; }
+.interaction-remove { margin-left: auto; width: 21px; height: 21px; border: 0; border-radius: 5px; background: transparent; color: var(--color-dark-gray); cursor: pointer; font-size: 15px; }
+.interaction-remove:hover { color: #e5484d; background: color-mix(in srgb, #e5484d 10%, transparent); }
+.interaction-field { display: grid; grid-template-columns: 66px minmax(0, 1fr); align-items: center; gap: 7px; margin-top: 6px; color: var(--color-dark-gray); font-size: 10px; }
+.interaction-field select, .interaction-field input { width: 100%; min-width: 0; height: 29px; padding: 0 7px; border: 1px solid var(--color-border); border-radius: 5px; outline: none; background: var(--color-white); color: var(--color-black); font: 11px var(--font-family); }
+.interaction-field select:focus, .interaction-field input:focus { border-color: var(--color-accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 12%, transparent); }
+.interaction-add { width: 100%; height: 33px; border: 1px dashed color-mix(in srgb, var(--color-accent) 45%, var(--color-border)); border-radius: 7px; background: color-mix(in srgb, var(--color-accent) 5%, transparent); color: var(--color-accent); font: 600 11px var(--font-family); cursor: pointer; }
+.interaction-add:hover { border-style: solid; background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
+.interaction-hint { display: flex; align-items: center; gap: 7px; padding: 2px 3px; color: var(--color-dark-gray); font-size: 9px; line-height: 1.4; }
+.interaction-hint > span:first-child { color: var(--color-accent); }

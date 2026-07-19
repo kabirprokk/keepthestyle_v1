@@ -96,7 +96,11 @@ class PropertiesManager {
             'Element': { expanded: true, properties: [
                 { key: 'elementName', label: 'Name', type: 'text', default: '' },
                 { key: 'elementId', label: 'HTML ID', type: 'text', default: '' },
-                { key: 'className', label: 'Classes', type: 'text', default: '' }
+                { key: 'className', label: 'Classes', type: 'text', default: '' },
+                { key: 'initialVisibility', label: 'On Load', type: 'select', options: ['visible', 'hidden'], default: 'visible' }
+            ]},
+            'Interactions': { expanded: true, properties: [
+                { key: 'interactions', label: 'Interactions', type: 'interactions' }
             ]},
             'Position & Size': { expanded: true, properties: [
                 { key: 'canvasX', label: 'X', type: 'number', units: ['px'], default: '0', min: 0 },
@@ -432,7 +436,7 @@ class PropertiesManager {
                 content.className = 'property-group-content';
                 
                 visibleProperties.forEach(prop => {
-                    const control = this.createPropertyControl(prop, element);
+                    const control = prop.type === 'interactions' ? this.createInteractionsEditor(element) : this.createPropertyControl(prop, element);
                     content.appendChild(control);
                 });
                 
@@ -525,6 +529,117 @@ class PropertiesManager {
         div.appendChild(input);
         
         return div;
+    }
+
+    createInteractionsEditor(element) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'interactions-editor';
+        const interactions = Array.isArray(element.interactions) ? element.interactions : [];
+        if (!interactions.length) {
+            const empty = document.createElement('div');
+            empty.className = 'interactions-empty';
+            empty.innerHTML = '<strong>No interactions yet</strong><span>Add a trigger to make this element interactive.</span>';
+            wrapper.appendChild(empty);
+        }
+        interactions.forEach((interaction, index) => wrapper.appendChild(this.createInteractionCard(element, interaction, index)));
+        const add = document.createElement('button');
+        add.className = 'interaction-add';
+        add.innerHTML = '<span>＋</span> Add interaction';
+        add.addEventListener('click', () => {
+            const next = interactions.concat({ trigger: 'click', action: 'toggle', targetId: element.id, value: '' });
+            this.store.updateElement(element.id, { interactions: next });
+            this.selectedElement = null;
+            this.update();
+        });
+        wrapper.appendChild(add);
+        const hint = document.createElement('div');
+        hint.className = 'interaction-hint';
+        hint.innerHTML = '<span>▶</span><span>Use <strong>Preview</strong> in the top bar to test behaviors.</span>';
+        wrapper.appendChild(hint);
+        return wrapper;
+    }
+
+    createInteractionCard(element, interaction, index) {
+        const card = document.createElement('div');
+        card.className = 'interaction-card';
+        const heading = document.createElement('div');
+        heading.className = 'interaction-card-heading';
+        heading.innerHTML = `<span class="interaction-number">${index + 1}</span><strong>When → Do</strong>`;
+        const remove = document.createElement('button');
+        remove.className = 'interaction-remove';
+        remove.title = 'Remove interaction';
+        remove.textContent = '×';
+        remove.addEventListener('click', () => {
+            const next = (element.interactions || []).filter((_, itemIndex) => itemIndex !== index);
+            this.store.updateElement(element.id, { interactions: next });
+            this.selectedElement = null;
+            this.update();
+        });
+        heading.appendChild(remove);
+        card.appendChild(heading);
+
+        const trigger = this.createInteractionSelect('Trigger', interaction.trigger || 'click', [
+            ['click', 'Click'], ['dblclick', 'Double click'], ['mouseenter', 'Mouse enters'], ['mouseleave', 'Mouse leaves'], ['load', 'Page loads']
+        ], value => this.updateInteraction(element, index, { trigger: value }));
+        const action = this.createInteractionSelect('Action', interaction.action || 'toggle', [
+            ['show', 'Show element'], ['hide', 'Hide element'], ['toggle', 'Toggle visibility'], ['text', 'Change text'],
+            ['navigate', 'Open link'], ['animate', 'Play animation'], ['addClass', 'Add CSS class'], ['removeClass', 'Remove CSS class']
+        ], value => this.updateInteraction(element, index, { action: value, value: '' }));
+        card.append(trigger, action);
+
+        if (interaction.action !== 'navigate') {
+            const targets = this.store.getState().elements.map(item => [item.id, `${item.name || item.tag} · ${item.id.slice(-5)}`]);
+            card.appendChild(this.createInteractionSelect('Target', interaction.targetId || element.id, targets, value => this.updateInteraction(element, index, { targetId: value })));
+        }
+
+        const valueLabels = { text: 'New text', navigate: 'URL', animate: 'Animation', addClass: 'Class name', removeClass: 'Class name' };
+        if (valueLabels[interaction.action]) {
+            if (interaction.action === 'animate') {
+                card.appendChild(this.createInteractionSelect('Animation', interaction.value || 'fade-in', [
+                    ['fade-in', 'Fade in'], ['fade-out', 'Fade out'], ['slide-up', 'Slide up'], ['slide-left', 'Slide left'], ['zoom-in', 'Zoom in'], ['bounce', 'Bounce'], ['shake', 'Shake'], ['pulse', 'Pulse']
+                ], value => this.updateInteraction(element, index, { value })));
+            } else {
+                const row = document.createElement('label');
+                row.className = 'interaction-field';
+                const label = document.createElement('span');
+                label.textContent = valueLabels[interaction.action];
+                const input = document.createElement('input');
+                input.type = interaction.action === 'navigate' ? 'url' : 'text';
+                input.value = interaction.value || '';
+                input.placeholder = interaction.action === 'navigate' ? 'https://example.com' : 'Enter value';
+                input.addEventListener('input', debounce(() => this.updateInteraction(element, index, { value: input.value }), 180));
+                row.append(label, input);
+                card.appendChild(row);
+            }
+        }
+        return card;
+    }
+
+    createInteractionSelect(labelText, value, options, onChange) {
+        const row = document.createElement('label');
+        row.className = 'interaction-field';
+        const label = document.createElement('span');
+        label.textContent = labelText;
+        const select = document.createElement('select');
+        options.forEach(([optionValue, optionLabel]) => {
+            const option = document.createElement('option');
+            option.value = optionValue;
+            option.textContent = optionLabel;
+            option.selected = optionValue === value;
+            select.appendChild(option);
+        });
+        select.addEventListener('change', () => onChange(select.value));
+        row.append(label, select);
+        return row;
+    }
+
+    updateInteraction(element, index, updates) {
+        const interactions = (element.interactions || []).map((item, itemIndex) => itemIndex === index ? { ...item, ...updates } : item);
+        this.store.updateElement(element.id, { interactions });
+        if (updates.action) {
+            this.selectedElement = null;
+            this.update();
+        }
     }
 
     createInput(propConfig, element) {
@@ -825,13 +940,14 @@ class PropertiesManager {
     }
 
     isMetaProperty(key) {
-        return key.startsWith('attr:') || ['elementName', 'elementId', 'className', 'canvasX', 'canvasY', 'canvasWidth', 'canvasHeight'].includes(key);
+        return key.startsWith('attr:') || ['elementName', 'elementId', 'className', 'initialVisibility', 'canvasX', 'canvasY', 'canvasWidth', 'canvasHeight'].includes(key);
     }
 
     getMetaValue(key, element, fallback = '') {
         if (key === 'elementName') return element.name || `${element.tag} element`;
         if (key === 'elementId') return (element.attributes || {}).id || '';
         if (key === 'className') return (element.attributes || {}).class || '';
+        if (key === 'initialVisibility') return element.hidden ? 'hidden' : 'visible';
         if (key === 'canvasX') return `${element.position?.x || 0}px`;
         if (key === 'canvasY') return `${element.position?.y || 0}px`;
         if (key === 'canvasWidth') return `${element.size?.width || 200}px`;
@@ -842,6 +958,11 @@ class PropertiesManager {
 
     updateMetaProperty(key, value, element) {
         if (key === 'elementName') return this.store.updateElement(element.id, { name: value.trim() });
+        if (key === 'initialVisibility') {
+            const styles = { ...element.styles };
+            if (value === 'hidden') styles.visibility = 'hidden'; else if (styles.visibility === 'hidden') delete styles.visibility;
+            return this.store.updateElement(element.id, { hidden: value === 'hidden', styles });
+        }
         if (key === 'canvasX' || key === 'canvasY') {
             const axis = key === 'canvasX' ? 'x' : 'y';
             return this.store.updateElement(element.id, { position: { ...element.position, [axis]: Math.max(0, parseFloat(value) || 0) } });

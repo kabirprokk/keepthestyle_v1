@@ -147,6 +147,7 @@ class Store {
             styles: elementData.styles || {},
             content: elementData.content || '',
             attributes: elementData.attributes || {},
+            interactions: Array.isArray(elementData.interactions) ? elementData.interactions : [],
             children: elementData.children || []
         };
         this.state.elements.push(element);
@@ -159,6 +160,7 @@ class Store {
 
     deleteElement(id) {
         this.state.elements = this.state.elements.filter(el => el.id !== id);
+        this.state.elements.forEach(el => { el.interactions = (el.interactions || []).filter(rule => rule.targetId !== id); });
         this.state.selectedElements = this.state.selectedElements.filter(sid => sid !== id);
         this.saveHistory();
         this.notify();
@@ -169,6 +171,7 @@ class Store {
         const remove = new Set(ids);
         if (!remove.size) return;
         this.state.elements = this.state.elements.filter(el => !remove.has(el.id));
+        this.state.elements.forEach(el => { el.interactions = (el.interactions || []).filter(rule => !remove.has(rule.targetId)); });
         this.state.selectedElements = this.state.selectedElements.filter(id => !remove.has(id));
         this.saveHistory();
         this.notify();
@@ -214,6 +217,7 @@ class Store {
                     y: element.position.y + 20
                 }
             });
+            newElement.interactions = (newElement.interactions || []).map(rule => ({ ...rule, targetId: rule.targetId === id ? newElement.id : rule.targetId }));
             this.state.elements.push(newElement);
             this.state.selectedElements = [newElement.id];
             this.saveHistory();
@@ -223,10 +227,12 @@ class Store {
     }
 
     duplicateElements(ids) {
+        const idMap = new Map(ids.map(id => [id, this.generateId()]));
         const copies = ids.map(id => this.state.elements.find(el => el.id === id)).filter(Boolean).map(element => deepClone({
-            ...element, id: this.generateId(),
+            ...element, id: idMap.get(element.id),
             position: { x: (element.position?.x || 0) + 20, y: (element.position?.y || 0) + 20 }
         }));
+        copies.forEach(copy => { copy.interactions = (copy.interactions || []).map(rule => ({ ...rule, targetId: idMap.get(rule.targetId) || rule.targetId })); });
         if (!copies.length) return;
         this.state.elements.push(...copies);
         this.state.selectedElements = copies.map(el => el.id);
@@ -239,7 +245,9 @@ class Store {
 
     pasteElements() {
         if (!Array.isArray(this.state.clipboard) || !this.state.clipboard.length) return;
-        const copies = this.state.clipboard.map(element => deepClone({ ...element, id: this.generateId(), position: { x: (element.position?.x || 0) + 20, y: (element.position?.y || 0) + 20 } }));
+        const idMap = new Map(this.state.clipboard.map(element => [element.id, this.generateId()]));
+        const copies = this.state.clipboard.map(element => deepClone({ ...element, id: idMap.get(element.id), position: { x: (element.position?.x || 0) + 20, y: (element.position?.y || 0) + 20 } }));
+        copies.forEach(copy => { copy.interactions = (copy.interactions || []).map(rule => ({ ...rule, targetId: idMap.get(rule.targetId) || rule.targetId })); });
         this.state.clipboard = copies.map(deepClone);
         this.state.elements.push(...copies);
         this.state.selectedElements = copies.map(el => el.id);

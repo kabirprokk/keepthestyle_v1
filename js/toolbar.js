@@ -266,6 +266,7 @@ class ToolbarManager {
         body {
             font-family: 'Inter', -apple-system, sans-serif;
         }
+        ${getInteractionAnimationCSS()}
     </style>
 </head>
 <body>
@@ -275,6 +276,7 @@ class ToolbarManager {
             html += this.renderElementHTML(el, 1);
         });
         
+        html += `    <script>\n${generateInteractionRuntime(elements).split('\n').map(line => '    ' + line).join('\n')}\n    </script>\n`;
         html += `</body>
 </html>`;
         return html;
@@ -288,6 +290,7 @@ class ToolbarManager {
         const styleAttr = styles ? ` style="${styles.trim()}"` : '';
         const attributes = { ...(element.attributes || {}) };
         attributes.id = safeDomId(attributes.id || element.id);
+        if (element.hidden) attributes.hidden = true;
         const attrs = this.renderAttributes(attributes);
         
         const selfClosingTags = ['img', 'input', 'br', 'hr'];
@@ -358,7 +361,7 @@ body {
                 css += `}\n\n`;
             }
         });
-        
+        if (elements.some(el => (el.interactions || []).some(rule => rule.action === 'animate'))) css += `${getInteractionAnimationCSS()}\n`;
         return css;
     }
 

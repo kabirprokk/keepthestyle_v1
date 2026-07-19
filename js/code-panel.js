@@ -115,6 +115,7 @@ class CodePanel {
         html += `    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n`;
         html += `    <title>${this.store.getState().projectName}</title>\n`;
         html += `    <link rel="stylesheet" href="styles.css">\n`;
+        html += `    <script src="script.js" defer></script>\n`;
         html += `</head>\n<body>\n`;
         
         elements.forEach(el => {
@@ -131,6 +132,7 @@ class CodePanel {
         const content = escapeHTML(element.content || '');
         const attributes = { ...(element.attributes || {}) };
         attributes.id = safeDomId(attributes.id || element.id);
+        if (element.hidden) attributes.hidden = true;
         const renderedAttributes = this.renderAttributes(attributes);
         
         const selfClosingTags = ['img', 'input', 'br', 'hr'];
@@ -205,7 +207,7 @@ class CodePanel {
                 css += `}\n\n`;
             }
         });
-        
+        if (elements.some(el => (el.interactions || []).some(rule => rule.action === 'animate'))) css += `${getInteractionAnimationCSS()}\n`;
         return css;
     }
 
@@ -216,12 +218,7 @@ class CodePanel {
     }
 
     generateJavaScript(elements) {
-        let js = `// KeepTheStyle Generated JavaScript\n\n`;
-        js += `// Your JavaScript code goes here\n\n`;
-        js += `document.addEventListener('DOMContentLoaded', function() {\n`;
-        js += `    console.log('Page loaded successfully!');\n`;
-        js += `});\n`;
-        return js;
+        return generateInteractionRuntime(elements);
     }
 
     highlightCode() {
