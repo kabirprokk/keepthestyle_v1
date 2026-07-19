@@ -82,12 +82,7 @@ class ToolbarManager {
             { label: 'Create project', value: true, primary: true }, { label: 'Cancel', value: false }
         ]);
         if (confirmed) {
-            this.store.setState({
-                elements: [],
-                projectName: 'Untitled Project',
-                selectedElements: []
-            });
-            this.store.saveHistory();
+            this.store.resetProject();
             this.updateUI();
             this.showNotification('New project created');
         }
@@ -244,9 +239,11 @@ class ToolbarManager {
 
     exportHTML() {
         const state = this.store.getState();
-        const html = this.generateFullHTML(state.elements);
-        this.downloadFile(html, `${safeFilename(state.projectName)}.html`, 'text/html');
-        this.showNotification('HTML exported');
+        state.pages.forEach((page, index) => {
+            const filename = page.slug === 'index' ? 'index.html' : `${safeFilename(page.slug)}.html`;
+            setTimeout(() => this.downloadFile(this.generateFullHTML(page.elements), filename, 'text/html'), index * 120);
+        });
+        this.showNotification(`${state.pages.length} website page${state.pages.length === 1 ? '' : 's'} exported`);
     }
 
     generateFullHTML(elements) {
@@ -276,7 +273,7 @@ class ToolbarManager {
             html += this.renderElementHTML(el, 1);
         });
         
-        html += `    <script>\n${generateInteractionRuntime(elements).split('\n').map(line => '    ' + line).join('\n')}\n    </script>\n`;
+        html += `    <script>\n${generateSiteRuntime(elements, this.store.getState().pages).split('\n').map(line => '    ' + line).join('\n')}\n    </script>\n`;
         html += `</body>
 </html>`;
         return html;
@@ -384,10 +381,28 @@ body {
 
     preview() {
         const state = this.store.getState();
-        const html = this.generateFullHTML(state.elements);
+        const html = this.generatePreviewHTML(state);
         const blob = new Blob([html], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
         window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+    }
+
+    generatePreviewHTML(state) {
+        const allElements = state.pages.flatMap(page => page.elements || []);
+        const pages = state.pages.map(page => {
+            const content = (page.elements || []).map(element => this.renderElementHTML(element, 2)).join('');
+            return `    <main class="kts-preview-page" data-page-id="${escapeHTML(page.id)}"${page.id === state.activePageId ? '' : ' hidden'}>\n${content}    </main>`;
+        }).join('\n');
+        const runtime = generateSiteRuntime(allElements, state.pages, { preview: true });
+        return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escapeHTML(state.projectName)} Preview</title><style>
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,Arial,sans-serif}.kts-preview-page{position:relative;width:${state.pageSize.width}px;height:${state.pageSize.height}px;margin:0 auto;overflow:hidden;background:#fff}${getInteractionAnimationCSS()}
+</style></head><body>
+${pages}
+<script>window.__ktsShowPage=function(id){document.querySelectorAll('.kts-preview-page').forEach(page=>page.hidden=page.dataset.pageId!==id);window.scrollTo(0,0)};
+${runtime}</script></body></html>`;
     }
 
     toggleDarkMode() {

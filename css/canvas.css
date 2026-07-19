@@ -60,6 +60,15 @@
     outline: none;
     cursor: pointer;
 }
+.page-manager-controls { margin-left: auto; display: flex; align-items: center; gap: 4px; padding-left: 10px; border-left: 1px solid var(--color-border); }
+.page-manager-label { color: var(--color-dark-gray); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+.page-switcher, .page-name-input { height: 28px; border: 1px solid var(--color-border); border-radius: 5px; background: var(--color-white); color: var(--color-black); font: 11px var(--font-family); outline: none; }
+.page-switcher { width: 105px; padding: 0 5px; }
+.page-name-input { width: 95px; padding: 0 7px; }
+.page-switcher:focus, .page-name-input:focus { border-color: var(--color-accent); }
+.page-manager-controls button { width: 28px; height: 28px; border: 1px solid transparent; border-radius: 5px; background: transparent; color: var(--color-dark-gray); cursor: pointer; }
+.page-manager-controls button:hover { border-color: var(--color-border); background: var(--color-light-gray); color: var(--color-black); }
+.page-manager-controls button:disabled { opacity: .3; pointer-events: none; }
 
 .canvas-wrapper {
     flex: 1;

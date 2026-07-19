@@ -579,25 +579,39 @@ class PropertiesManager {
         card.appendChild(heading);
 
         const trigger = this.createInteractionSelect('Trigger', interaction.trigger || 'click', [
-            ['click', 'Click'], ['dblclick', 'Double click'], ['mouseenter', 'Mouse enters'], ['mouseleave', 'Mouse leaves'], ['load', 'Page loads']
+            ['click', 'Click'], ['dblclick', 'Double click'], ['mouseenter', 'Mouse enters'], ['mouseleave', 'Mouse leaves'], ['scroll', 'Scrolls into view'], ['load', 'Page loads']
         ], value => this.updateInteraction(element, index, { trigger: value }));
         const action = this.createInteractionSelect('Action', interaction.action || 'toggle', [
             ['show', 'Show element'], ['hide', 'Hide element'], ['toggle', 'Toggle visibility'], ['text', 'Change text'],
-            ['navigate', 'Open link'], ['animate', 'Play animation'], ['addClass', 'Add CSS class'], ['removeClass', 'Remove CSS class']
-        ], value => this.updateInteraction(element, index, { action: value, value: '' }));
+            ['navigate', 'Open link'], ['page', 'Go to page'], ['animate', 'Play animation'], ['addClass', 'Add CSS class'], ['removeClass', 'Remove CSS class']
+        ], value => this.updateInteraction(element, index, { action: value, value: value === 'page' ? (this.store.getState().pages[0]?.id || '') : value === 'animate' ? 'fade-in' : '' }));
         card.append(trigger, action);
 
-        if (interaction.action !== 'navigate') {
+        if (!['navigate', 'page'].includes(interaction.action)) {
             const targets = this.store.getState().elements.map(item => [item.id, `${item.name || item.tag} · ${item.id.slice(-5)}`]);
             card.appendChild(this.createInteractionSelect('Target', interaction.targetId || element.id, targets, value => this.updateInteraction(element, index, { targetId: value })));
         }
 
-        const valueLabels = { text: 'New text', navigate: 'URL', animate: 'Animation', addClass: 'Class name', removeClass: 'Class name' };
+        const valueLabels = { text: 'New text', navigate: 'URL', page: 'Destination', animate: 'Animation', addClass: 'Class name', removeClass: 'Class name' };
         if (valueLabels[interaction.action]) {
-            if (interaction.action === 'animate') {
+            if (interaction.action === 'page') {
+                card.appendChild(this.createInteractionSelect('Destination', interaction.value || this.store.getState().pages[0]?.id, this.store.getState().pages.map(page => [page.id, page.name]), value => this.updateInteraction(element, index, { value })));
+            } else if (interaction.action === 'animate') {
                 card.appendChild(this.createInteractionSelect('Animation', interaction.value || 'fade-in', [
                     ['fade-in', 'Fade in'], ['fade-out', 'Fade out'], ['slide-up', 'Slide up'], ['slide-left', 'Slide left'], ['zoom-in', 'Zoom in'], ['bounce', 'Bounce'], ['shake', 'Shake'], ['pulse', 'Pulse']
                 ], value => this.updateInteraction(element, index, { value })));
+                card.appendChild(this.createInteractionSelect('Easing', interaction.easing || 'ease', [['ease', 'Smooth'], ['ease-in', 'Ease in'], ['ease-out', 'Ease out'], ['ease-in-out', 'Ease in/out'], ['linear', 'Linear']], value => this.updateInteraction(element, index, { easing: value })));
+                const timing = document.createElement('div');
+                timing.className = 'interaction-timing';
+                [['Duration', 'duration', interaction.duration ?? 600, 50], ['Delay', 'delay', interaction.delay ?? 0, 0], ['Repeat', 'repeat', interaction.repeat ?? 1, 1]].forEach(([labelText, key, current, min]) => {
+                    const label = document.createElement('label');
+                    label.innerHTML = `<span>${labelText}</span>`;
+                    const input = document.createElement('input');
+                    input.type = 'number'; input.min = min; input.step = key === 'repeat' ? 1 : 50; input.value = current;
+                    input.addEventListener('change', () => this.updateInteraction(element, index, { [key]: Math.max(min, Number(input.value) || min) }));
+                    label.appendChild(input); timing.appendChild(label);
+                });
+                card.appendChild(timing);
             } else {
                 const row = document.createElement('label');
                 row.className = 'interaction-field';

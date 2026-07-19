@@ -218,7 +218,7 @@ class CodePanel {
     }
 
     generateJavaScript(elements) {
-        return generateInteractionRuntime(elements);
+        return generateSiteRuntime(elements, this.store.getState().pages);
     }
 
     highlightCode() {

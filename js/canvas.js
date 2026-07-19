@@ -16,6 +16,7 @@ class CanvasManager {
         this.zoomLevel = 1;
         this.interaction = null;
         this.contextMenu = null;
+        this.installPageControls();
         
         this.init();
     }
@@ -26,11 +27,55 @@ class CanvasManager {
         this.renderCanvas();
     }
 
+    installPageControls() {
+        const controls = this.container.querySelector('.canvas-controls');
+        const group = document.createElement('div');
+        group.className = 'page-manager-controls';
+        group.innerHTML = `<span class="page-manager-label">Page</span><select class="page-switcher" aria-label="Current page"></select><input class="page-name-input" aria-label="Page name" maxlength="50"><button data-page-action="add" title="Add page">＋</button><button data-page-action="duplicate" title="Duplicate page">⧉</button><button data-page-action="delete" title="Delete page">×</button>`;
+        controls.appendChild(group);
+        const select = group.querySelector('.page-switcher');
+        const name = group.querySelector('.page-name-input');
+        select.addEventListener('change', () => this.store.switchPage(select.value));
+        name.addEventListener('change', () => this.store.renamePage(this.store.getState().activePageId, name.value));
+        name.addEventListener('keydown', e => { if (e.key === 'Enter') name.blur(); });
+        group.querySelector('[data-page-action="add"]').addEventListener('click', () => this.store.addPage(`Page ${this.store.getState().pages.length + 1}`));
+        group.querySelector('[data-page-action="duplicate"]').addEventListener('click', () => this.store.duplicatePage(this.store.getState().activePageId));
+        group.querySelector('[data-page-action="delete"]').addEventListener('click', async () => {
+            if (this.store.getState().pages.length <= 1) { showToast('A project needs at least one page', 'error'); return; }
+            const confirmed = await showChoiceDialog('Delete this page?', 'The page and all of its elements will be removed.', [{ label: 'Delete page', value: true, primary: true }, { label: 'Cancel', value: false }]);
+            if (confirmed) this.store.deletePage(this.store.getState().activePageId);
+        });
+        this.pageControls = group;
+        this.syncPageControls();
+    }
+
+    syncPageControls() {
+        if (!this.pageControls) return;
+        const state = this.store.getState();
+        const select = this.pageControls.querySelector('.page-switcher');
+        const signature = state.pages.map(page => `${page.id}:${page.name}`).join('|');
+        if (select.dataset.signature !== signature) {
+            select.innerHTML = '';
+            state.pages.forEach(page => {
+                const option = document.createElement('option');
+                option.value = page.id; option.textContent = page.name;
+                select.appendChild(option);
+            });
+            select.dataset.signature = signature;
+        }
+        select.value = state.activePageId;
+        const page = state.pages.find(item => item.id === state.activePageId);
+        const input = this.pageControls.querySelector('.page-name-input');
+        if (document.activeElement !== input) input.value = page?.name || '';
+        this.pageControls.querySelector('[data-page-action="delete"]').disabled = state.pages.length <= 1;
+    }
+
     subscribeToStore() {
         this.lastElementsJSON = '';
         this.lastPageSizeJSON = '';
         
         this.store.subscribe((state) => {
+            this.syncPageControls();
             const currentElementsJSON = JSON.stringify(state.elements);
             const currentPageSizeJSON = JSON.stringify(state.pageSize);
             
