@@ -440,6 +440,7 @@ class ToolbarManager {
         .kts-site-stage { position: relative; flex: 0 0 auto; margin: auto; }
         .kts-site-page { position: absolute; inset: 0 auto auto 0; width: ${state.pageSize.width}px; height: ${state.pageSize.height}px; overflow: hidden; transform-origin: top left; }
         ${getInteractionAnimationCSS()}
+        ${getElementHoverCSS(elements)}
     </style>
 </head>
 <body><div class="kts-site-viewport"><div class="kts-site-stage"><main class="kts-site-page">
@@ -548,6 +549,7 @@ body {
             }
         });
         if (elements.some(el => el.styles?.animationName?.startsWith('kts') || (el.interactions || []).some(rule => rule.action === 'animate'))) css += `${getInteractionAnimationCSS()}\n`;
+        css += getElementHoverCSS(elements);
         return css;
     }
 
@@ -607,7 +609,7 @@ body {
 <title>${escapeHTML(state.projectName)}${options.download ? '' : ' Preview'}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&family=Lora:wght@400;500;600;700&family=Merriweather:wght@300;400;700&family=Montserrat:wght@300;400;500;600;700&family=Nunito:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;500;600;700&family=Oswald:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&family=Raleway:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&family=Rubik:wght@300;400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-${this.getDesignTokenCSS(state)}*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;font-family:var(--kts-font-body),Inter,Arial,sans-serif;color:var(--kts-text)}.kts-preview-viewport{min-width:100%;min-height:100%;display:flex;overflow:auto}.kts-preview-stage{position:relative;flex:0 0 auto;margin:auto}.kts-preview-page{position:absolute;inset:0 auto auto 0;width:${state.pageSize.width}px;height:${state.pageSize.height}px;overflow:hidden;background:var(--kts-surface);transform-origin:top left}${getInteractionAnimationCSS()}
+${this.getDesignTokenCSS(state)}*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;font-family:var(--kts-font-body),Inter,Arial,sans-serif;color:var(--kts-text)}.kts-preview-viewport{min-width:100%;min-height:100%;display:flex;overflow:auto}.kts-preview-stage{position:relative;flex:0 0 auto;margin:auto}.kts-preview-page{position:absolute;inset:0 auto auto 0;width:${state.pageSize.width}px;height:${state.pageSize.height}px;overflow:hidden;background:var(--kts-surface);transform-origin:top left}${getInteractionAnimationCSS()}${getElementHoverCSS(allElements)}
 </style></head><body><div class="kts-preview-viewport"><div class="kts-preview-stage">
 ${pages}
 </div></div><script>const ktsPageWidth=${state.pageSize.width};const ktsPageHeight=${state.pageSize.height};function ktsFitPreview(){const scale=Math.max(window.innerWidth/ktsPageWidth,window.innerHeight/ktsPageHeight);const stage=document.querySelector('.kts-preview-stage');stage.style.width=(ktsPageWidth*scale)+'px';stage.style.height=(ktsPageHeight*scale)+'px';document.querySelector('.kts-preview-viewport').style.background='#000';document.querySelectorAll('.kts-preview-page').forEach(page=>page.style.transform='scale('+scale+')')}window.addEventListener('resize',ktsFitPreview);

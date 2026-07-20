@@ -27,6 +27,7 @@ The project is built with plain HTML, CSS, and JavaScript. It has no framework d
 - Animation presets with configurable duration, delay, easing, and repetition
 - Twenty-two animation presets including slides, zooms, rotate, flip, blur, reveal, roll, skew, wobble, heartbeat, swing, and float
 - First-class animation and transition controls on every element for timing, delay, easing, repeats, direction, fill behavior, and playback state
+- Configurable hover and keyboard-focus effects on every element: glow, lift, scale, tilt, brightness, blur, and border glow
 - Accurate, responsive preview that preserves the canvas coordinate system
 - Full-viewport cover rendering that removes background gutters in both previews and exported websites
 - Live HTML, CSS, and JavaScript generation

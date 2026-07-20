@@ -117,6 +117,13 @@ class PropertiesManager {
                 { key: 'transitionTimingFunction', label: 'Transition Easing', type: 'select', options: ['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'cubic-bezier(.2,.8,.2,1)'], default: 'ease' },
                 { key: 'transitionDelay', label: 'Transition Delay', type: 'number', units: ['ms', 's'], min: 0, step: 50, default: '0ms' }
             ]},
+            'Hover Effects': { expanded: true, properties: [
+                { key: 'hoverEffect', label: 'Effect', type: 'select', options: ['none', 'glow', 'lift', 'scale', 'tilt', 'brightness', 'blur', 'border-glow'], default: 'none' },
+                { key: 'hoverColor', label: 'Glow Color', type: 'color', default: '#4d6bff' },
+                { key: 'hoverIntensity', label: 'Intensity', type: 'number', min: 1, max: 100, step: 1, default: '24' },
+                { key: 'hoverDuration', label: 'Duration', type: 'number', min: 0, max: 2000, step: 10, default: '220' },
+                { key: 'hoverEasing', label: 'Easing', type: 'select', options: ['ease-out', 'ease', 'ease-in', 'ease-in-out', 'linear'], default: 'ease-out' }
+            ]},
             'Position & Size': { expanded: true, properties: [
                 { key: 'canvasX', label: 'X', type: 'number', units: ['px'], default: '0', min: 0 },
                 { key: 'canvasY', label: 'Y', type: 'number', units: ['px'], default: '0', min: 0 },
@@ -1032,7 +1039,7 @@ class PropertiesManager {
     }
 
     isMetaProperty(key) {
-        return key.startsWith('attr:') || ['elementName', 'elementId', 'className', 'initialVisibility', 'canvasX', 'canvasY', 'canvasWidth', 'canvasHeight', 'animationPreset', 'videoPlayback', 'videoControls', 'videoLoop', 'videoMuted'].includes(key);
+        return key.startsWith('attr:') || key.startsWith('hover') || ['elementName', 'elementId', 'className', 'initialVisibility', 'canvasX', 'canvasY', 'canvasWidth', 'canvasHeight', 'animationPreset', 'videoPlayback', 'videoControls', 'videoLoop', 'videoMuted'].includes(key);
     }
 
     getMetaValue(key, element, fallback = '') {
@@ -1052,6 +1059,11 @@ class PropertiesManager {
         if (key === 'videoControls') return element.attributes?.controls ? 'visible' : 'hidden';
         if (key === 'videoLoop') return element.attributes?.loop === false ? 'off' : 'on';
         if (key === 'videoMuted') return element.attributes?.muted === false ? 'on' : 'muted';
+        if (key === 'hoverEffect') return element.hover?.effect || 'none';
+        if (key === 'hoverColor') return element.hover?.color || '#4d6bff';
+        if (key === 'hoverIntensity') return element.hover?.intensity ?? 24;
+        if (key === 'hoverDuration') return element.hover?.duration ?? 220;
+        if (key === 'hoverEasing') return element.hover?.easing || 'ease-out';
         if (key.startsWith('attr:')) {
             const value = (element.attributes || {})[key.slice(5)] ?? fallback;
             if (typeof value === 'string' && value.startsWith('data:') && value.length > 1024) {
@@ -1089,6 +1101,15 @@ class PropertiesManager {
                 styles.animationFillMode ||= 'both';
             }
             return this.store.updateElement(element.id, { styles });
+        }
+        if (key.startsWith('hover')) {
+            const hover = { effect: 'none', color: '#4d6bff', intensity: 24, duration: 220, easing: 'ease-out', ...(element.hover || {}) };
+            if (key === 'hoverEffect') hover.effect = value;
+            if (key === 'hoverColor') hover.color = value;
+            if (key === 'hoverIntensity') hover.intensity = Math.min(100, Math.max(1, Number(value) || 24));
+            if (key === 'hoverDuration') hover.duration = Math.min(2000, Math.max(0, Number(value) || 0));
+            if (key === 'hoverEasing') hover.easing = value;
+            return this.store.updateElement(element.id, { hover });
         }
         if (key.startsWith('video')) {
             const attributes = { ...(element.attributes || {}) };

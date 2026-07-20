@@ -385,6 +385,9 @@ class CanvasManager {
         const state = this.store.getState();
         const elements = state.elements;
         const selectedIds = state.selectedElements;
+        let hoverStyles = document.getElementById('kts-editor-hover-effects');
+        if (!hoverStyles) { hoverStyles = document.createElement('style'); hoverStyles.id = 'kts-editor-hover-effects'; document.head.appendChild(hoverStyles); }
+        hoverStyles.textContent = getElementHoverCSS(elements);
         
         this.canvasPage.innerHTML = '';
         
@@ -412,6 +415,7 @@ class CanvasManager {
         const el = document.createElement(element.tag || 'div');
         el.dataset.id = element.id;
         el.dataset.tag = element.tag || 'div';
+        el.id = safeDomId(element.attributes?.id || element.id, 'element');
         
         // Position
         el.style.position = 'absolute';

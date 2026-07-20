@@ -10,7 +10,7 @@ This matrix tracks the professional-builder roadmap against the current browser-
 | Layout and styling | Absolute/relative/fixed/sticky positioning, Flexbox, CSS Grid, sizing constraints, spacing, borders, per-corner radius, shadows, filters, blend modes, transforms, backgrounds, typography, custom CSS and HTML attributes |
 | Elements | Text, headings, links, buttons, images, video, audio, SVG, canvas, iframe, forms, inputs, textarea, checkbox, radio, select, shapes, navigation, semantic layout, cards, columns, divider, slider, progress, toggle, quote and code block |
 | Media | URL and local upload, image replacement/background application, clean video playback, posters, looping, sound, lazy editor loading, YouTube/Vimeo embedding |
-| Pages and motion | Unlimited local pages, page duplication/rename/delete, no-code page links, route-specific transitions, 22 element animations, timing/easing/repeat/direction/fill controls, trigger-based interactions |
+| Pages and motion | Unlimited local pages, route transitions, 22 animations, trigger-based interactions, and configurable glow/lift/scale/tilt/brightness/blur hover effects on every element |
 | Code and export | Live HTML/CSS/JS, IDs/classes/attributes, custom CSS, HTML import, single-file export, multi-page ZIP, editable project backup/restore |
 | SEO and accessibility | Language/direction, title, description, keywords, canonical URL, Open Graph, Twitter cards, theme color, alt text, ARIA fields, keyboard editing, focus states and reduced-motion support |
 | Performance | Revision-aware rendering/autosave, compact media history, lazy images/iframes, asynchronous image decoding, selective editor media playback, cache-versioned editor assets |

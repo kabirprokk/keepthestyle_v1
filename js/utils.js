@@ -158,6 +158,34 @@ function getInteractionAnimationCSS() {
 @media (prefers-reduced-motion: reduce) { .kts-animate { animation-duration: .01ms !important; } }`.trim();
 }
 
+function getElementHoverCSS(elements = []) {
+    const allowedEffects = ['glow', 'lift', 'scale', 'tilt', 'brightness', 'blur', 'border-glow'];
+    let css = '';
+    const motionSelectors = [];
+    elements.forEach(element => {
+        const hover = element.hover || {};
+        if (!allowedEffects.includes(hover.effect)) return;
+        const selector = `#${safeDomId(element.attributes?.id || element.id, 'element')}`;
+        motionSelectors.push(selector);
+        const intensity = Math.min(100, Math.max(1, Number(hover.intensity) || 24));
+        const duration = Math.min(2000, Math.max(0, Number(hover.duration) || 220));
+        const color = /^#[0-9a-f]{6}$/i.test(hover.color || '') ? hover.color : '#4d6bff';
+        const easing = ['linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out'].includes(hover.easing) ? hover.easing : 'ease-out';
+        const declarations = {
+            glow: `box-shadow:0 0 ${intensity}px ${color},0 0 ${Math.round(intensity * 2)}px color-mix(in srgb,${color} 45%,transparent)!important;filter:brightness(${1 + intensity / 250})!important`,
+            lift: `transform:translateY(-${Math.max(2, Math.round(intensity / 5))}px)!important;box-shadow:0 ${Math.max(6, Math.round(intensity / 2))}px ${Math.max(12, intensity)}px color-mix(in srgb,${color} 28%,transparent)!important`,
+            scale: `transform:scale(${(1 + intensity / 500).toFixed(3)})!important`,
+            tilt: `transform:perspective(700px) rotateX(${(intensity / 12).toFixed(1)}deg) rotateY(-${(intensity / 10).toFixed(1)}deg)!important`,
+            brightness: `filter:brightness(${(1 + intensity / 150).toFixed(2)}) saturate(${(1 + intensity / 250).toFixed(2)})!important`,
+            blur: `filter:blur(${(intensity / 20).toFixed(1)}px)!important`,
+            'border-glow': `box-shadow:inset 0 0 0 ${Math.max(1, Math.round(intensity / 20))}px ${color},0 0 ${intensity}px color-mix(in srgb,${color} 55%,transparent)!important`
+        };
+        css += `${selector}{transition:transform ${duration}ms ${easing},box-shadow ${duration}ms ${easing},filter ${duration}ms ${easing},border-color ${duration}ms ${easing}!important}\n${selector}:hover,${selector}:focus-visible{${declarations[hover.effect]};will-change:transform,filter}\n`;
+    });
+    if (motionSelectors.length) css += `@media (prefers-reduced-motion:reduce){${motionSelectors.join(',')}{transition-duration:.01ms!important}}\n`;
+    return css;
+}
+
 // JSON embedded in a <script> must not be able to terminate the script element.
 function safeInlineJSON(value) {
     return JSON.stringify(value).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026');
