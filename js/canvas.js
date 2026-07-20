@@ -15,6 +15,7 @@ class CanvasManager {
         this.dragTarget = null;
         this.dragOffset = { x: 0, y: 0 };
         this.zoomLevel = 1;
+        this.zoomMode = 'manual';
         this.interaction = null;
         this.contextMenu = null;
         this.installPageControls();
@@ -26,6 +27,11 @@ class CanvasManager {
         this.bindEvents();
         this.subscribeToStore();
         this.renderCanvas();
+        this.fitToScreen();
+        this.resizeObserver = new ResizeObserver(() => {
+            if (this.zoomMode === 'fit') this.fitToScreen();
+        });
+        this.resizeObserver.observe(this.canvasWrapper);
     }
 
     installPageControls() {
@@ -131,7 +137,16 @@ class CanvasManager {
         pageSelect.addEventListener('change', (e) => {
             const [width, height] = e.target.value.split('x').map(Number);
             this.store.setState({ pageSize: { width, height } });
+            this.fitToScreen();
         });
+
+        this.canvasWrapper.addEventListener('wheel', event => {
+            if (!(event.ctrlKey || event.metaKey)) return;
+            event.preventDefault();
+            this.zoomMode = 'manual';
+            const direction = event.deltaY < 0 ? 1 : -1;
+            this.setZoom(this.zoomLevel + direction * 0.1, { x: event.clientX, y: event.clientY });
+        }, { passive: false });
 
         // Drag and drop from sidebar
         this.canvasPage.addEventListener('dragover', (e) => {
@@ -151,10 +166,15 @@ class CanvasManager {
                     
                     const defaults = elementData.defaults || {};
                     const defaultSize = defaults.size || { width: 200, height: 150 };
+                    const state = this.store.getState();
+                    const snap = value => state.snapEnabled && !e.altKey ? Math.round(value / 10) * 10 : value;
                     const newElement = {
                         tag: elementData.tag,
                         name: elementData.name,
-                        position: { x: Math.max(0, x - defaultSize.width / 2), y: Math.max(0, y - defaultSize.height / 2) },
+                        position: {
+                            x: Math.max(0, Math.min(snap(x - defaultSize.width / 2), state.pageSize.width - defaultSize.width)),
+                            y: Math.max(0, Math.min(snap(y - defaultSize.height / 2), state.pageSize.height - defaultSize.height))
+                        },
                         size: defaultSize,
                         styles: defaults.styles || {},
                         content: defaults.content || '',
@@ -188,10 +208,18 @@ class CanvasManager {
             e.preventDefault();
             const amount = e.shiftKey ? 10 : 1;
             const delta = { x: e.key === 'ArrowLeft' ? -amount : e.key === 'ArrowRight' ? amount : 0, y: e.key === 'ArrowUp' ? -amount : e.key === 'ArrowDown' ? amount : 0 };
-            state.selectedElements.forEach(id => {
-                const item = state.elements.find(el => el.id === id);
-                if (!item || item.locked) return;
-                this.store.updateElement(id, { position: { x: Math.max(0, (item.position?.x || 0) + delta.x), y: Math.max(0, (item.position?.y || 0) + delta.y) } });
+            const items = state.selectedElements.map(id => state.elements.find(element => element.id === id)).filter(item => item && !item.locked);
+            if (!items.length) return;
+            const dx = Math.max(
+                Math.max(...items.map(item => -(item.position?.x || 0))),
+                Math.min(delta.x, Math.min(...items.map(item => state.pageSize.width - (item.position?.x || 0) - (item.size?.width || 1))))
+            );
+            const dy = Math.max(
+                Math.max(...items.map(item => -(item.position?.y || 0))),
+                Math.min(delta.y, Math.min(...items.map(item => state.pageSize.height - (item.position?.y || 0) - (item.size?.height || 1))))
+            );
+            items.forEach(item => {
+                this.store.updateElement(item.id, { position: { x: (item.position?.x || 0) + dx, y: (item.position?.y || 0) + dy } });
             });
         });
     }
@@ -199,21 +227,49 @@ class CanvasManager {
     handleZoom(action) {
         switch(action) {
             case 'zoom-in':
-                this.zoomLevel = Math.min(this.zoomLevel + 0.1, 3);
+                this.zoomMode = 'manual';
+                this.setZoom(this.zoomLevel + 0.1);
                 break;
             case 'zoom-out':
-                this.zoomLevel = Math.max(this.zoomLevel - 0.1, 0.1);
+                this.zoomMode = 'manual';
+                this.setZoom(this.zoomLevel - 0.1);
                 break;
             case 'fit-screen':
-                const rect = this.canvasWrapper.getBoundingClientRect();
-                const pageSize = this.store.getState().pageSize;
-                const scaleX = (rect.width - 40) / pageSize.width;
-                const scaleY = (rect.height - 40) / pageSize.height;
-                this.zoomLevel = Math.min(scaleX, scaleY, 1);
+                this.fitToScreen();
                 break;
         }
+    }
+
+    fitToScreen() {
+        this.zoomMode = 'fit';
+        const styles = getComputedStyle(this.canvasWrapper);
+        const availableWidth = this.canvasWrapper.clientWidth - parseFloat(styles.paddingLeft) - parseFloat(styles.paddingRight);
+        const availableHeight = this.canvasWrapper.clientHeight - parseFloat(styles.paddingTop) - parseFloat(styles.paddingBottom);
+        const pageSize = this.store.getState().pageSize;
+        this.setZoom(Math.min(availableWidth / pageSize.width, availableHeight / pageSize.height, 1));
+    }
+
+    setZoom(value, anchor = null) {
+        const nextZoom = Math.max(0.1, Math.min(Number(value) || 1, 3));
+        const wrapperRect = this.canvasWrapper.getBoundingClientRect();
+        const anchorX = anchor ? anchor.x - wrapperRect.left : this.canvasWrapper.clientWidth / 2;
+        const anchorY = anchor ? anchor.y - wrapperRect.top : this.canvasWrapper.clientHeight / 2;
+        const logicalX = (this.canvasWrapper.scrollLeft + anchorX - this.canvasStage.offsetLeft) / this.zoomLevel;
+        const logicalY = (this.canvasWrapper.scrollTop + anchorY - this.canvasStage.offsetTop) / this.zoomLevel;
+        this.zoomLevel = nextZoom;
+        this.updateCanvasTransform();
+        requestAnimationFrame(() => {
+            this.canvasWrapper.scrollLeft = this.canvasStage.offsetLeft + logicalX * nextZoom - anchorX;
+            this.canvasWrapper.scrollTop = this.canvasStage.offsetTop + logicalY * nextZoom - anchorY;
+        });
+    }
+
+    updateCanvasTransform() {
+        const pageSize = this.store.getState().pageSize;
+        this.canvasPage.style.transform = `scale(${this.zoomLevel})`;
+        this.canvasStage.style.width = `${pageSize.width * this.zoomLevel}px`;
+        this.canvasStage.style.height = `${pageSize.height * this.zoomLevel}px`;
         this.updateZoomLevel();
-        this.renderCanvas();
     }
 
     handleCanvasControl(action) {
@@ -269,12 +325,9 @@ class CanvasManager {
         this.renderCanvasAids(state);
         this.renderSelectionOverlay();
         
-        this.updateZoomLevel();
         this.syncCanvasControls();
-        this.canvasPage.style.transform = `scale(${this.zoomLevel})`;
         this.canvasPage.style.transformOrigin = 'top left';
-        this.canvasStage.style.width = `${state.pageSize.width * this.zoomLevel}px`;
-        this.canvasStage.style.height = `${state.pageSize.height * this.zoomLevel}px`;
+        this.updateCanvasTransform();
     }
 
     createElementNode(element, selectedIds) {

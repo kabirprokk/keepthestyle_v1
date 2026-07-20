@@ -226,8 +226,8 @@ class Store {
                 ...element,
                 id: this.generateId(),
                 position: {
-                    x: element.position.x + 20,
-                    y: element.position.y + 20
+                    x: Math.max(0, Math.min(element.position.x + 20, this.state.pageSize.width - (element.size?.width || 1))),
+                    y: Math.max(0, Math.min(element.position.y + 20, this.state.pageSize.height - (element.size?.height || 1)))
                 }
             });
             newElement.interactions = (newElement.interactions || []).map(rule => ({ ...rule, targetId: rule.targetId === id ? newElement.id : rule.targetId }));
@@ -243,7 +243,10 @@ class Store {
         const idMap = new Map(ids.map(id => [id, this.generateId()]));
         const copies = ids.map(id => this.state.elements.find(el => el.id === id)).filter(Boolean).map(element => deepClone({
             ...element, id: idMap.get(element.id),
-            position: { x: (element.position?.x || 0) + 20, y: (element.position?.y || 0) + 20 }
+            position: {
+                x: Math.max(0, Math.min((element.position?.x || 0) + 20, this.state.pageSize.width - (element.size?.width || 1))),
+                y: Math.max(0, Math.min((element.position?.y || 0) + 20, this.state.pageSize.height - (element.size?.height || 1)))
+            }
         }));
         copies.forEach(copy => { copy.interactions = (copy.interactions || []).map(rule => ({ ...rule, targetId: idMap.get(rule.targetId) || rule.targetId })); });
         if (!copies.length) return;
@@ -259,7 +262,10 @@ class Store {
     pasteElements() {
         if (!Array.isArray(this.state.clipboard) || !this.state.clipboard.length) return;
         const idMap = new Map(this.state.clipboard.map(element => [element.id, this.generateId()]));
-        const copies = this.state.clipboard.map(element => deepClone({ ...element, id: idMap.get(element.id), position: { x: (element.position?.x || 0) + 20, y: (element.position?.y || 0) + 20 } }));
+        const copies = this.state.clipboard.map(element => deepClone({ ...element, id: idMap.get(element.id), position: {
+            x: Math.max(0, Math.min((element.position?.x || 0) + 20, this.state.pageSize.width - (element.size?.width || 1))),
+            y: Math.max(0, Math.min((element.position?.y || 0) + 20, this.state.pageSize.height - (element.size?.height || 1)))
+        } }));
         copies.forEach(copy => { copy.interactions = (copy.interactions || []).map(rule => ({ ...rule, targetId: idMap.get(rule.targetId) || rule.targetId })); });
         this.state.clipboard = copies.map(deepClone);
         this.state.elements.push(...copies);

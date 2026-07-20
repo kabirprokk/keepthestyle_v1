@@ -95,7 +95,6 @@
     position: absolute;
     inset: 0 auto auto 0;
     transform-origin: top left;
-    transition: transform 0.2s ease;
 }
 .canvas-page.grid-visible { background-image: linear-gradient(rgba(77,107,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(77,107,255,.08) 1px, transparent 1px); background-size: 20px 20px; }
 .canvas-page > .editor-hidden { outline: 1px dashed #9aa4b2; filter: grayscale(.7); }

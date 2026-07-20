@@ -153,7 +153,7 @@ function generateSiteRuntime(elements, pages = [], options = {}) {
             sourceId: safeDomId(source.attributes?.id || source.id),
             targetId: safeDomId((elements.find(item => item.id === rule.targetId)?.attributes?.id) || rule.targetId || source.id),
             trigger: rule.trigger || 'click', action: rule.action || 'toggle', value: String(rule.value || ''),
-            pageUrl: page ? (options.preview ? `#${page.id}` : (page.slug === 'index' ? 'index.html' : `${page.slug}.html`)) : '',
+            pageUrl: page ? ((options.preview || options.singleFile) ? `#${page.id}` : (page.slug === 'index' ? 'index.html' : `${page.slug}.html`)) : '',
             duration: Math.max(50, Number(rule.duration) || 600), delay: Math.max(0, Number(rule.delay) || 0),
             repeat: Math.max(1, Number(rule.repeat) || 1), easing: rule.easing || 'ease'
         });

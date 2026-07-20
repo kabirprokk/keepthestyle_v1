@@ -16,7 +16,7 @@ The project is built with plain HTML, CSS, and JavaScript. It has no framework d
 - Animation presets with configurable duration, delay, easing, and repetition
 - Accurate, responsive preview that preserves the canvas coordinate system
 - Live HTML, CSS, and JavaScript generation
-- Website ZIP, individual HTML page, CSS, and editable project-file export
+- One-file website export with inline HTML, CSS, and JavaScript, plus multi-page ZIP and editable project-file export
 - HTML import and portable `.ktstyle` project files
 - Automatic browser storage, undo/redo history, keyboard shortcuts, and light/dark themes
 
@@ -61,6 +61,7 @@ Projects are saved automatically in browser storage. Use **Save** to download a 
 | Move selection by 10px | `Shift` + arrow keys |
 | Temporarily bypass grid snapping | Hold `Alt` while dragging or resizing |
 | Preserve aspect ratio while resizing | Hold `Shift` while resizing a corner |
+| Zoom around the pointer | `Ctrl/Cmd` + mouse wheel |
 | Multi-select | `Shift` + click |
 | Select all | `Ctrl/Cmd` + `A` |
 | Copy / paste | `Ctrl/Cmd` + `C` / `V` |
@@ -71,9 +72,8 @@ Projects are saved automatically in browser storage. Use **Save** to download a 
 
 ## Export formats
 
-- **Website ZIP** — all connected pages and runtime behavior in a deployable archive
-- **HTML pages** — individual documents for every project page
-- **CSS** — generated styles for the active design
+- **Single HTML file** — every page, style, and interaction runtime integrated into one portable `.html` document
+- **Website ZIP** — separate connected HTML pages and runtime behavior in a deployable archive
 - **Project file** — editable `.ktstyle` source for backup and continued editing
 
 Exported websites contain standard HTML, CSS, and JavaScript and can be hosted on any static hosting provider.
