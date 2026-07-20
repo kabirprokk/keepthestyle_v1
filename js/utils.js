@@ -158,6 +158,11 @@ function getInteractionAnimationCSS() {
 @media (prefers-reduced-motion: reduce) { .kts-animate { animation-duration: .01ms !important; } }`.trim();
 }
 
+// JSON embedded in a <script> must not be able to terminate the script element.
+function safeInlineJSON(value) {
+    return JSON.stringify(value).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026');
+}
+
 if (typeof document !== 'undefined') {
     const editorAnimationStyles = document.createElement('style');
     editorAnimationStyles.id = 'kts-animation-presets';

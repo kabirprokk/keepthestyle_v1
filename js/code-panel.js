@@ -114,10 +114,15 @@ class CodePanel {
     }
 
     generateHTML(elements) {
-        let html = `<!DOCTYPE html>\n<html lang="en">\n<head>\n`;
+        const state = this.store.getState();
+        const language = /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(state.siteLanguage || '') ? state.siteLanguage : 'en';
+        const direction = ['auto', 'ltr', 'rtl'].includes(state.textDirection) ? state.textDirection : 'auto';
+        let html = `<!DOCTYPE html>\n<html lang="${escapeHTML(language)}" dir="${direction}">\n<head>\n`;
         html += `    <meta charset="UTF-8">\n`;
         html += `    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n`;
-        html += `    <title>${this.store.getState().projectName}</title>\n`;
+        html += `    <meta name="description" content="${escapeHTML(state.siteDescription || '')}">\n`;
+        html += `    <meta name="theme-color" content="${escapeHTML(state.themeColor || '#4d6bff')}">\n`;
+        html += `    <title>${escapeHTML(state.projectName)}</title>\n`;
         html += `    <link rel="stylesheet" href="styles.css">\n`;
         html += `    <script src="script.js" defer></script>\n`;
         html += `</head>\n<body>\n`;
@@ -137,6 +142,7 @@ class CodePanel {
         const attributes = { ...(element.attributes || {}) };
         attributes.id = safeDomId(attributes.id || element.id);
         if (element.hidden) attributes.hidden = true;
+        if (attributes.target === '_blank') attributes.rel = 'noopener noreferrer';
         const renderedAttributes = this.renderAttributes(attributes);
         
         const selfClosingTags = ['img', 'input', 'br', 'hr'];
@@ -166,8 +172,14 @@ class CodePanel {
     renderAttributes(attributes) {
         let html = '';
         Object.entries(attributes).forEach(([key, value]) => {
-            if (value !== undefined && value !== null && value !== '') {
-                if (/^on/i.test(key) || key === 'style') return;
+            if (value !== undefined && value !== null && value !== false && value !== '') {
+                if (!/^[a-z_:][a-z0-9:_.-]*$/i.test(key) || /^on/i.test(key) || key === 'style') return;
+                if (['href', 'src', 'poster', 'action', 'formaction'].includes(key.toLowerCase())) {
+                    const url = String(value).trim();
+                    if (/^(?:javascript|vbscript):/i.test(url)) return;
+                    if (/^data:/i.test(url) && !/^data:(?:image\/(?!svg\+xml)|video\/|audio\/)/i.test(url)) return;
+                }
+                if (value === true) { html += ` ${escapeHTML(key)}`; return; }
                 const renderedValue = typeof value === 'string' && value.startsWith('data:') && value.length > 1024
                     ? `${value.slice(0, value.indexOf(',') + 1)}[embedded media omitted from live code view]`
                     : value;

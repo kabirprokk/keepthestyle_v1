@@ -24,6 +24,7 @@ The project is built with plain HTML, CSS, and JavaScript. It has no framework d
 - Accurate, responsive preview that preserves the canvas coordinate system
 - Live HTML, CSS, and JavaScript generation
 - One-file website export with inline HTML, CSS, and JavaScript, plus multi-page ZIP and editable project-file export
+- International website settings for language codes, automatic/LTR/RTL direction, search descriptions, browser theme color, and social metadata
 - HTML import and portable `.ktstyle` project files
 - Automatic browser storage, undo/redo history, keyboard shortcuts, and light/dark themes
 
@@ -55,8 +56,9 @@ Then open `http://localhost:8080`.
 3. Move and resize elements visually. Grid snapping is enabled by default; hold `Alt` while dragging for free placement.
 4. Use the right inspector to configure content, appearance, HTML attributes, visibility, locking, and interactions.
 5. Add and connect pages with the page manager and navigation actions.
-6. Select **Preview** to test the website in a proportionally scaled, coordinate-accurate view.
-7. Select **Export** to download a deployable website ZIP or another supported format.
+6. Open **Settings** to choose the website language, text direction, search description, and browser theme color.
+7. Select **Preview** to test the website in a proportionally scaled, coordinate-accurate view.
+8. Select **Export** to download a deployable website ZIP or another supported format.
 
 Projects are saved automatically in browser storage. Use **Save** to download a portable `.ktstyle` file before clearing browser data or moving to another device.
 

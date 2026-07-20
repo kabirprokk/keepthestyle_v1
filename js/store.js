@@ -23,6 +23,10 @@ class Store {
             darkMode: false,
             activeTab: 'html',
             projectName: 'Untitled Project',
+            siteLanguage: 'en',
+            textDirection: 'auto',
+            siteDescription: '',
+            themeColor: '#4d6bff',
             isDragging: false,
             hasLoadedProject: false,
             dragOffset: { x: 0, y: 0 },
@@ -367,6 +371,10 @@ class Store {
         this.state.elements = page.elements;
         this.state.selectedElements = [];
         this.state.projectName = 'Untitled Project';
+        this.state.siteLanguage = 'en';
+        this.state.textDirection = 'auto';
+        this.state.siteDescription = '';
+        this.state.themeColor = '#4d6bff';
         this.state.history = [];
         this.state.historyIndex = -1;
         this.saveHistory(); this.notify(); this.saveToStorage();
@@ -446,7 +454,12 @@ class Store {
                 pages: this.getSerializablePages(),
                 activePageId: this.state.activePageId,
                 projectName: this.state.projectName,
+                siteLanguage: this.state.siteLanguage,
+                textDirection: this.state.textDirection,
+                siteDescription: this.state.siteDescription,
+                themeColor: this.state.themeColor,
                 pageSize: this.state.pageSize,
+                gridVisible: this.state.gridVisible,
                 snapEnabled: this.state.snapEnabled,
                 lastUpdate: this.state.lastUpdate
             };
@@ -468,7 +481,12 @@ class Store {
                 this.state.activePageId = parsed.activePageId || null;
                 this.state.hasLoadedProject = true;
                 this.state.projectName = parsed.projectName || 'Untitled Project';
-                this.state.pageSize = parsed.pageSize || { width: 1920, height: 1080 };
+                this.state.siteLanguage = /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(parsed.siteLanguage || '') ? parsed.siteLanguage : 'en';
+                this.state.textDirection = ['auto', 'ltr', 'rtl'].includes(parsed.textDirection) ? parsed.textDirection : 'auto';
+                this.state.siteDescription = String(parsed.siteDescription || '').slice(0, 300);
+                this.state.themeColor = /^#[0-9a-f]{6}$/i.test(parsed.themeColor || '') ? parsed.themeColor : '#4d6bff';
+                this.state.pageSize = this.normalizePageSize(parsed.pageSize);
+                this.state.gridVisible = parsed.gridVisible !== false;
                 this.state.snapEnabled = parsed.snapEnabled !== false;
                 this.saveHistory();
             }
@@ -484,7 +502,12 @@ class Store {
             pages: this.getSerializablePages(),
             activePageId: this.state.activePageId,
             projectName: this.state.projectName,
+            siteLanguage: this.state.siteLanguage,
+            textDirection: this.state.textDirection,
+            siteDescription: this.state.siteDescription,
+            themeColor: this.state.themeColor,
             pageSize: this.state.pageSize,
+            gridVisible: this.state.gridVisible,
             snapEnabled: this.state.snapEnabled,
             version: '2.0.0'
         };
@@ -507,7 +530,12 @@ class Store {
             this.ensurePageModel();
             this.state.selectedElements = [];
             this.state.projectName = data.projectName || 'Imported Project';
-            this.state.pageSize = data.pageSize || { width: 1920, height: 1080 };
+            this.state.siteLanguage = /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(data.siteLanguage || '') ? data.siteLanguage : 'en';
+            this.state.textDirection = ['auto', 'ltr', 'rtl'].includes(data.textDirection) ? data.textDirection : 'auto';
+            this.state.siteDescription = String(data.siteDescription || '').slice(0, 300);
+            this.state.themeColor = /^#[0-9a-f]{6}$/i.test(data.themeColor || '') ? data.themeColor : '#4d6bff';
+            this.state.pageSize = this.normalizePageSize(data.pageSize);
+            this.state.gridVisible = data.gridVisible !== false;
             this.state.snapEnabled = data.snapEnabled !== false;
             this.state.history = [];
             this.state.historyIndex = -1;
@@ -527,6 +555,15 @@ class Store {
         if (this.autoSaveInterval) {
             clearInterval(this.autoSaveInterval);
         }
+    }
+
+    normalizePageSize(size) {
+        const width = Math.round(Number(size?.width));
+        const height = Math.round(Number(size?.height));
+        return {
+            width: Number.isFinite(width) ? Math.min(10000, Math.max(100, width)) : 1920,
+            height: Number.isFinite(height) ? Math.min(10000, Math.max(100, height)) : 1080
+        };
     }
 }
 

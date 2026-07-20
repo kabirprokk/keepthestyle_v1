@@ -395,12 +395,21 @@ class ToolbarManager {
     }
 
     generateFullHTML(elements) {
+        const state = this.store.getState();
+        const language = /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(state.siteLanguage || '') ? state.siteLanguage : 'en';
+        const direction = ['auto', 'ltr', 'rtl'].includes(state.textDirection) ? state.textDirection : 'auto';
         let html = `<!DOCTYPE html>
-<html lang="en">
+<html lang="${escapeHTML(language)}" dir="${direction}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${escapeHTML(this.store.getState().projectName)}</title>
+    <meta name="description" content="${escapeHTML(state.siteDescription || '')}">
+    <meta name="theme-color" content="${escapeHTML(state.themeColor || '#4d6bff')}">
+    <meta name="generator" content="KeepTheStyle">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="${escapeHTML(state.projectName)}">
+    <meta property="og:description" content="${escapeHTML(state.siteDescription || '')}">
+    <title>${escapeHTML(state.projectName)}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&family=Lora:wght@400;500;600;700&family=Merriweather:wght@300;400;700&family=Montserrat:wght@300;400;500;600;700&family=Nunito:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;500;600;700&family=Oswald:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&family=Raleway:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&family=Rubik:wght@300;400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -424,7 +433,7 @@ class ToolbarManager {
             html += this.renderElementHTML(el, 1);
         });
         
-        html += `    <script>\n${generateSiteRuntime(elements, this.store.getState().pages).split('\n').map(line => '    ' + line).join('\n')}\n    </script>\n`;
+        html += `    <script>\n${generateSiteRuntime(elements, state.pages).split('\n').map(line => '    ' + line).join('\n')}\n    </script>\n`;
         html += `</body>
 </html>`;
         return html;
@@ -439,6 +448,7 @@ class ToolbarManager {
         const attributes = { ...(element.attributes || {}) };
         attributes.id = safeDomId(attributes.id || element.id);
         if (element.hidden) attributes.hidden = true;
+        if (attributes.target === '_blank') attributes.rel = 'noopener noreferrer';
         const attrs = this.renderAttributes(attributes);
         
         const selfClosingTags = ['img', 'input', 'br', 'hr'];
@@ -452,7 +462,7 @@ class ToolbarManager {
     renderInlineStyles(styles) {
         let css = '';
         Object.entries(styles).forEach(([key, value]) => {
-            if (value && value !== '') {
+            if (value !== undefined && value !== null && value !== '') {
                 if (key !== 'customCSS') css += `${toKebabCase(key)}: ${value}; `;
             }
         });
@@ -462,10 +472,14 @@ class ToolbarManager {
     renderAttributes(attributes) {
         let html = '';
         Object.entries(attributes).forEach(([key, value]) => {
-            if (value && value !== '') {
-                if (/^on/i.test(key) || key === 'style') return;
-                html += ` ${escapeHTML(key)}="${escapeHTML(value)}"`;
+            if (value === undefined || value === null || value === false || value === '') return;
+            if (!/^[a-z_:][a-z0-9:_.-]*$/i.test(key) || /^on/i.test(key) || key === 'style') return;
+            if (['href', 'src', 'poster', 'action', 'formaction'].includes(key.toLowerCase())) {
+                const url = String(value).trim();
+                if (/^(?:javascript|vbscript):/i.test(url)) return;
+                if (/^data:/i.test(url) && !/^data:(?:image\/(?!svg\+xml)|video\/|audio\/)/i.test(url)) return;
             }
+            html += value === true ? ` ${escapeHTML(key)}` : ` ${escapeHTML(key)}="${escapeHTML(value)}"`;
         });
         return html;
     }
@@ -500,7 +514,7 @@ body {
                 css += `${selector} {\n`;
                 css += `    position: absolute;\n    left: ${el.position?.x || 0}px;\n    top: ${el.position?.y || 0}px;\n    width: ${el.size?.width || 1}px;\n    height: ${el.size?.height || 1}px;\n`;
                 Object.entries(styles).forEach(([key, value]) => {
-                    if (value && value !== '') {
+                    if (value !== undefined && value !== null && value !== '') {
                         if (key === 'customCSS' || ['position', 'left', 'top', 'right', 'bottom', 'width', 'height'].includes(key)) return;
                         const kebabKey = toKebabCase(key);
                         css += `    ${kebabKey}: ${value};\n`;
@@ -554,6 +568,8 @@ body {
     }
 
     generatePreviewHTML(state, options = {}) {
+        const language = /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(state.siteLanguage || '') ? state.siteLanguage : 'en';
+        const direction = ['auto', 'ltr', 'rtl'].includes(state.textDirection) ? state.textDirection : 'auto';
         const allElements = state.pages.flatMap(page => page.elements || []);
         const pages = state.pages.map(page => {
             const content = (page.elements || []).map(element => this.renderElementHTML(element, 2)).join('');
@@ -561,14 +577,15 @@ body {
         }).join('\n');
         const runtime = generateSiteRuntime(allElements, state.pages, { preview: true, singleFile: options.download });
         return `<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="${escapeHTML(language)}" dir="${direction}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="${escapeHTML(state.siteDescription || '')}"><meta name="theme-color" content="${escapeHTML(state.themeColor || '#4d6bff')}"><meta name="generator" content="KeepTheStyle"><meta property="og:title" content="${escapeHTML(state.projectName)}"><meta property="og:description" content="${escapeHTML(state.siteDescription || '')}">
 <title>${escapeHTML(state.projectName)}${options.download ? '' : ' Preview'}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&family=Lora:wght@400;500;600;700&family=Merriweather:wght@300;400;700&family=Montserrat:wght@300;400;500;600;700&family=Nunito:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;500;600;700&family=Oswald:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&family=Raleway:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&family=Rubik:wght@300;400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;font-family:Inter,Arial,sans-serif}.kts-preview-viewport{min-width:100%;min-height:100%;display:flex;overflow:auto}.kts-preview-stage{position:relative;flex:0 0 auto;margin:auto}.kts-preview-page{position:absolute;inset:0 auto auto 0;width:${state.pageSize.width}px;height:${state.pageSize.height}px;overflow:hidden;background:#fff;transform-origin:top left}${getInteractionAnimationCSS()}
 </style></head><body><div class="kts-preview-viewport"><div class="kts-preview-stage">
 ${pages}
-</div></div><script>const ktsPageWidth=${state.pageSize.width};const ktsPageHeight=${state.pageSize.height};function ktsFitPreview(){const scale=Math.min(window.innerWidth/ktsPageWidth,window.innerHeight/ktsPageHeight,1);const stage=document.querySelector('.kts-preview-stage');stage.style.width=(ktsPageWidth*scale)+'px';stage.style.height=(ktsPageHeight*scale)+'px';document.querySelectorAll('.kts-preview-page').forEach(page=>page.style.transform='scale('+scale+')')}window.addEventListener('resize',ktsFitPreview);window.__ktsShowPage=function(id,updateHash=true){const page=[...document.querySelectorAll('.kts-preview-page')].find(item=>item.dataset.pageId===id);if(!page)return;document.querySelectorAll('.kts-preview-page').forEach(item=>item.hidden=item!==page);if(updateHash&&location.hash!=='#'+id)history.pushState(null,'','#'+id);window.scrollTo(0,0);ktsFitPreview()};window.addEventListener('hashchange',()=>window.__ktsShowPage(location.hash.slice(1),false));const ktsInitialPage=location.hash.slice(1)||${JSON.stringify(state.activePageId)};window.__ktsShowPage(ktsInitialPage,false);ktsFitPreview();
+</div></div><script>const ktsPageWidth=${state.pageSize.width};const ktsPageHeight=${state.pageSize.height};function ktsFitPreview(){const scale=Math.min(window.innerWidth/ktsPageWidth,window.innerHeight/ktsPageHeight,1);const stage=document.querySelector('.kts-preview-stage');stage.style.width=(ktsPageWidth*scale)+'px';stage.style.height=(ktsPageHeight*scale)+'px';document.querySelectorAll('.kts-preview-page').forEach(page=>page.style.transform='scale('+scale+')')}window.addEventListener('resize',ktsFitPreview);window.__ktsShowPage=function(id,updateHash=true){const page=[...document.querySelectorAll('.kts-preview-page')].find(item=>item.dataset.pageId===id);if(!page)return;document.querySelectorAll('.kts-preview-page').forEach(item=>item.hidden=item!==page);if(updateHash&&location.hash!=='#'+id)history.pushState(null,'','#'+id);window.scrollTo(0,0);ktsFitPreview()};window.addEventListener('hashchange',()=>window.__ktsShowPage(location.hash.slice(1),false));const ktsInitialPage=location.hash.slice(1)||${safeInlineJSON(state.activePageId)};window.__ktsShowPage(ktsInitialPage,false);ktsFitPreview();
 ${runtime}</script></body></html>`;
     }
 
@@ -581,15 +598,64 @@ ${runtime}</script></body></html>`;
 
     async openSettings() {
         const state = this.store.getState();
-        const action = await showChoiceDialog('Workspace settings', `Theme: ${this.isDarkMode ? 'Dark' : 'Light'}\nAuto-save: Enabled\nGrid: ${state.gridVisible ? 'Visible' : 'Hidden'}\nSnap: ${state.snapEnabled ? 'Enabled' : 'Disabled'}`, [
-            { label: state.snapEnabled ? 'Disable snap' : 'Enable snap', value: 'snap', primary: true }, { label: 'Toggle theme', value: 'theme' }, { label: state.gridVisible ? 'Hide grid' : 'Show grid', value: 'grid' }, { label: 'Close', value: null }
-        ]);
-        if (action === 'theme') this.toggleDarkMode();
-        if (action === 'grid') this.store.setState({ gridVisible: !state.gridVisible });
-        if (action === 'snap') {
-            this.store.setState({ snapEnabled: !state.snapEnabled });
-            this.showNotification(`Snap to grid ${state.snapEnabled ? 'disabled' : 'enabled'}`);
-        }
+        const backdrop = document.createElement('div');
+        backdrop.className = 'app-dialog-backdrop';
+        const dialog = document.createElement('div');
+        dialog.className = 'app-dialog settings-dialog';
+        dialog.setAttribute('role', 'dialog');
+        dialog.setAttribute('aria-modal', 'true');
+        dialog.setAttribute('aria-labelledby', 'site-settings-title');
+        dialog.innerHTML = `
+            <h2 id="site-settings-title">Website settings</h2>
+            <p>Configure the exported website for search engines, international visitors, and the editor workspace.</p>
+            <form class="media-form settings-form">
+                <div class="settings-grid">
+                    <div class="media-field"><label for="site-language">Website language</label><input id="site-language" value="${escapeHTML(state.siteLanguage || 'en')}" maxlength="35" list="site-language-list" autocomplete="off"><datalist id="site-language-list"><option value="en"><option value="es"><option value="fr"><option value="de"><option value="pt-BR"><option value="hi"><option value="ar"><option value="zh-CN"><option value="ja"></datalist><span class="media-help">Use a BCP 47 code such as en, hi, ar, or pt-BR.</span></div>
+                    <div class="media-field"><label for="text-direction">Text direction</label><select id="text-direction"><option value="auto">Automatic</option><option value="ltr">Left to right</option><option value="rtl">Right to left</option></select></div>
+                </div>
+                <div class="media-field"><label for="site-description">Search description</label><textarea id="site-description" maxlength="300" rows="3" placeholder="A concise description of this website">${escapeHTML(state.siteDescription || '')}</textarea><span class="media-help"><span class="description-count">${String(state.siteDescription || '').length}</span>/300 characters</span></div>
+                <div class="media-field color-field"><label for="theme-color">Browser theme color</label><input id="theme-color" type="color" value="${escapeHTML(state.themeColor || '#4d6bff')}"><output>${escapeHTML(state.themeColor || '#4d6bff')}</output></div>
+                <fieldset class="settings-toggles"><legend>Workspace</legend><label><input id="setting-grid" type="checkbox"${state.gridVisible ? ' checked' : ''}> Show grid</label><label><input id="setting-snap" type="checkbox"${state.snapEnabled ? ' checked' : ''}> Snap to grid</label><label><input id="setting-dark" type="checkbox"${this.isDarkMode ? ' checked' : ''}> Dark mode</label></fieldset>
+                <div class="app-dialog-actions"><button type="button" class="btn settings-cancel">Cancel</button><button type="submit" class="btn btn-primary">Save settings</button></div>
+            </form>`;
+        backdrop.appendChild(dialog);
+        document.body.appendChild(backdrop);
+        const form = dialog.querySelector('form');
+        const language = dialog.querySelector('#site-language');
+        const direction = dialog.querySelector('#text-direction');
+        const description = dialog.querySelector('#site-description');
+        const color = dialog.querySelector('#theme-color');
+        const colorOutput = dialog.querySelector('output');
+        direction.value = state.textDirection || 'auto';
+        const close = () => { document.removeEventListener('keydown', onKeyDown); backdrop.remove(); };
+        const onKeyDown = event => { if (event.key === 'Escape') close(); };
+        dialog.querySelector('.settings-cancel').addEventListener('click', close);
+        backdrop.addEventListener('mousedown', event => { if (event.target === backdrop) close(); });
+        document.addEventListener('keydown', onKeyDown);
+        description.addEventListener('input', () => { dialog.querySelector('.description-count').textContent = description.value.length; });
+        color.addEventListener('input', () => { colorOutput.value = color.value; });
+        form.addEventListener('submit', event => {
+            event.preventDefault();
+            const languageCode = language.value.trim();
+            if (!/^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(languageCode)) {
+                showToast('Enter a valid language code such as en, hi, ar, or pt-BR', 'error');
+                language.focus();
+                return;
+            }
+            const wantsDarkMode = dialog.querySelector('#setting-dark').checked;
+            this.store.setState({
+                siteLanguage: languageCode,
+                textDirection: direction.value,
+                siteDescription: description.value.trim(),
+                themeColor: color.value,
+                gridVisible: dialog.querySelector('#setting-grid').checked,
+                snapEnabled: dialog.querySelector('#setting-snap').checked
+            });
+            if (wantsDarkMode !== this.isDarkMode) this.toggleDarkMode();
+            close();
+            this.showNotification('Website settings saved');
+        });
+        language.focus();
     }
 
     updateUI() {
