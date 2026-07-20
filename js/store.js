@@ -673,7 +673,8 @@ class Store {
             duration: Math.min(2000, Math.max(100, Math.round(Number(route.duration) || this.state.pageTransitionDuration))),
             easing: easings.includes(route.easing) ? route.easing : this.state.pageTransitionEasing,
             delay: Math.min(1500, Math.max(0, Math.round(Number(route.delay) || 0))),
-            distance: Math.min(50, Math.max(2, Number(route.distance) || 8))
+            distance: Math.min(50, Math.max(2, Number(route.distance) || 8)),
+            color: /^#[0-9a-f]{6}$/i.test(route.color || '') ? route.color : '#000000'
         })) : [];
     }
 }

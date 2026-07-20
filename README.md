@@ -13,7 +13,7 @@ The project is built with plain HTML, CSS, and JavaScript. It has no framework d
 - Clean autoplay video blocks with optional controls, looping, sound, play/stop settings, posters, and no-code playback actions
 - Optimized large-media editing with lazy canvas video loading, compact undo snapshots, and revision-aware rendering and autosave
 - Precision canvas with zoom, fit-to-screen, resizing, multi-selection, locking, and layer ordering
-- Logical Group/Ungroup with grouped selection and movement, plus 10%–800% manual zoom
+- Logical Group/Ungroup with grouped selection and movement, visible canvas controls, context actions, keyboard shortcuts, and 10%–800% zoom
 - Design System manager with reusable color, typography, spacing and radius tokens exported as CSS variables
 - Designer-style Layers workspace with live selection, renaming, visibility, locking, and front-to-back reordering
 - Functional 10px snap-to-grid with page-bound placement and an `Alt` key precision override
@@ -21,7 +21,7 @@ The project is built with plain HTML, CSS, and JavaScript. It has no framework d
 - Sixteen open-source Google Font families available directly in the typography inspector
 - Inline text editing directly on the canvas
 - Multi-page projects with page creation, duplication, renaming, deletion, and navigation actions
-- Editable page-to-page transitions with independent exit/entrance effects, timing, easing, pause, and movement intensity
+- Editable page-to-page transitions with independent exit/entrance effects, transition color, timing, easing, pause, and movement intensity
 - A dedicated `+` button beside the page selector for creating different transitions between specific page pairs
 - No-code interactions for clicks, hover, page load, and scroll-into-view events
 - Animation presets with configurable duration, delay, easing, and repetition
