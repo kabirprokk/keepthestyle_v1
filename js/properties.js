@@ -103,6 +103,7 @@ class PropertiesManager {
                 { key: 'interactions', label: 'Interactions', type: 'interactions' }
             ]},
             'Animation & Transition': { expanded: true, properties: [
+                { key: 'animationActions', label: 'Preview', type: 'animationActions' },
                 { key: 'animationPreset', label: 'Animation', type: 'select', options: ['none', 'fade-in', 'fade-out', 'slide-up', 'slide-down', 'slide-left', 'slide-right', 'zoom-in', 'zoom-out', 'rotate-in', 'flip-in', 'blur-in', 'reveal-up', 'roll-in', 'skew-in', 'bounce', 'shake', 'wobble', 'pulse', 'heartbeat', 'flash', 'swing', 'float'], default: 'none' },
                 { key: 'animationDuration', label: 'Duration', type: 'number', units: ['ms', 's'], min: 0, step: 50, default: '600ms' },
                 { key: 'animationDelay', label: 'Delay', type: 'number', units: ['ms', 's'], min: 0, step: 50, default: '0ms' },
@@ -475,7 +476,7 @@ class PropertiesManager {
                 content.className = 'property-group-content';
                 
                 visibleProperties.forEach(prop => {
-                    const control = prop.type === 'interactions' ? this.createInteractionsEditor(element) : this.createPropertyControl(prop, element);
+                    const control = prop.type === 'interactions' ? this.createInteractionsEditor(element) : prop.type === 'animationActions' ? this.createAnimationActions(element) : this.createPropertyControl(prop, element);
                     content.appendChild(control);
                 });
                 
@@ -485,6 +486,35 @@ class PropertiesManager {
             this.content.appendChild(groupDiv);
         });
         if (!this.content.children.length) this.content.innerHTML = '<div class="no-selection">No matching properties</div>';
+    }
+
+    createAnimationActions(element) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'animation-actions';
+        const replay = document.createElement('button');
+        replay.className = 'btn btn-primary'; replay.textContent = 'Replay'; replay.title = 'Restart animation on the canvas';
+        replay.addEventListener('click', () => {
+            const node = [...(window.canvasManager?.canvasPage.querySelectorAll('[data-id]') || [])].find(item => item.dataset.id === element.id);
+            const name = element.styles?.animationName;
+            if (!node || !name) { showToast('Choose an animation preset first', 'error'); return; }
+            node.style.animationName = 'none';
+            void node.offsetWidth;
+            node.style.animationName = name;
+            node.style.animationPlayState = 'running';
+        });
+        const toggle = document.createElement('button');
+        const paused = element.styles?.animationPlayState === 'paused';
+        toggle.className = 'btn'; toggle.textContent = paused ? 'Resume' : 'Pause';
+        toggle.addEventListener('click', () => this.store.updateElement(element.id, { styles: { ...element.styles, animationPlayState: paused ? 'running' : 'paused' } }));
+        const clear = document.createElement('button');
+        clear.className = 'btn'; clear.textContent = 'Clear';
+        clear.addEventListener('click', () => {
+            const styles = { ...element.styles };
+            ['animationName', 'animationDuration', 'animationDelay', 'animationTimingFunction', 'animationIterationCount', 'animationDirection', 'animationFillMode', 'animationPlayState'].forEach(key => delete styles[key]);
+            this.store.updateElement(element.id, { styles });
+        });
+        wrapper.append(replay, toggle, clear);
+        return wrapper;
     }
 
     createPropertyControl(propConfig, element) {
