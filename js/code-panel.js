@@ -237,7 +237,8 @@ class CodePanel {
     }
 
     generateJavaScript(elements) {
-        return generateSiteRuntime(elements, this.store.getState().pages);
+        const state = this.store.getState();
+        return `${generatePageTransitionRuntime(state)}\n\n${generateSiteRuntime(elements, state.pages)}`;
     }
 
     highlightCode() {

@@ -163,6 +163,26 @@ function safeInlineJSON(value) {
     return JSON.stringify(value).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026');
 }
 
+function generatePageTransitionRuntime(settings = {}, options = {}) {
+    const allowed = ['none', 'fade', 'slide-left', 'slide-right', 'slide-up', 'zoom', 'blur', 'flip'];
+    const easingOptions = ['linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out'];
+    const config = {
+        type: allowed.includes(settings.pageTransition) ? settings.pageTransition : 'fade',
+        duration: Math.min(2000, Math.max(100, Number(settings.pageTransitionDuration) || 450)),
+        easing: easingOptions.includes(settings.pageTransitionEasing) ? settings.pageTransitionEasing : 'ease-in-out',
+        preview: Boolean(options.preview)
+    };
+    return `(function(){
+const config=${safeInlineJSON(config)};
+const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const frames=(entering)=>{const presets={fade:[{opacity:0},{opacity:1}],'slide-left':[{opacity:0,transform:'translateX(8%)'},{opacity:1,transform:'translateX(0)'}],'slide-right':[{opacity:0,transform:'translateX(-8%)'},{opacity:1,transform:'translateX(0)'}],'slide-up':[{opacity:0,transform:'translateY(8%)'},{opacity:1,transform:'translateY(0)'}],zoom:[{opacity:0,transform:'scale(.94)'},{opacity:1,transform:'scale(1)'}],blur:[{opacity:0,filter:'blur(12px)'},{opacity:1,filter:'blur(0)'}],flip:[{opacity:0,transform:'perspective(900px) rotateY(10deg)'},{opacity:1,transform:'perspective(900px) rotateY(0)'}]};const pair=presets[config.type]||presets.fade;return entering?pair:[pair[1],pair[0]]};
+let running=false;
+window.__ktsRunPageTransition=async function(swap){if(running)return;if(config.type==='none'||reduced||!Element.prototype.animate){swap();return}running=true;const root=config.preview?document.querySelector('.kts-preview-stage'):document.body;let swapped=false;const applySwap=()=>{if(!swapped){swapped=true;swap()}};try{await root.animate(frames(false),{duration:config.duration/2,easing:config.easing,fill:'both'}).finished;applySwap();await root.animate(frames(true),{duration:config.duration/2,easing:config.easing,fill:'both'}).finished}catch(error){applySwap()}finally{running=false}};
+window.__ktsNavigatePage=function(url){if(!url)return;try{sessionStorage.setItem('kts-page-enter','1')}catch(error){}window.__ktsRunPageTransition(()=>{window.location.href=url})};
+if(!config.preview){document.addEventListener('click',event=>{if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;const link=event.target.closest('a[href]');if(!link||link.target==='_blank'||link.hasAttribute('download'))return;const url=new URL(link.href,location.href);if(url.origin!==location.origin||!url.pathname.toLowerCase().endsWith('.html'))return;event.preventDefault();window.__ktsNavigatePage(link.href)});let enter=false;try{enter=sessionStorage.getItem('kts-page-enter')==='1';sessionStorage.removeItem('kts-page-enter')}catch(error){}if(enter&&config.type!=='none'&&!reduced)requestAnimationFrame(()=>document.body.animate(frames(true),{duration:config.duration/2,easing:config.easing}))}
+})();`;
+}
+
 if (typeof document !== 'undefined') {
     const editorAnimationStyles = document.createElement('style');
     editorAnimationStyles.id = 'kts-animation-presets';
@@ -216,7 +236,7 @@ function generateSiteRuntime(elements, pages = [], options = {}) {
             case 'restartMedia': if (typeof target.pause === 'function') { target.currentTime = 0; target.play().catch(() => {}); } break;
             case 'toggleMute': if ('muted' in target) target.muted = !target.muted; break;
             case 'navigate': if (/^(https?:|mailto:|tel:|#)/i.test(rule.value) || rule.value.startsWith('/')) window.location.href = rule.value; break;
-            case 'page': if (rule.pageUrl) { if (rule.pageUrl.startsWith('#') && window.__ktsShowPage) window.__ktsShowPage(rule.pageUrl.slice(1)); else window.location.href = rule.pageUrl; } break;
+            case 'page': if (rule.pageUrl) { if (rule.pageUrl.startsWith('#') && window.__ktsShowPage) window.__ktsShowPage(rule.pageUrl.slice(1)); else if (window.__ktsNavigatePage) window.__ktsNavigatePage(rule.pageUrl); else window.location.href = rule.pageUrl; } break;
             case 'addClass': rule.value.split(/\\s+/).filter(Boolean).forEach(name => target.classList.add(name)); break;
             case 'removeClass': rule.value.split(/\\s+/).filter(Boolean).forEach(name => target.classList.remove(name)); break;
             case 'animate': {

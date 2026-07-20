@@ -27,6 +27,9 @@ class Store {
             textDirection: 'auto',
             siteDescription: '',
             themeColor: '#4d6bff',
+            pageTransition: 'fade',
+            pageTransitionDuration: 450,
+            pageTransitionEasing: 'ease-in-out',
             isDragging: false,
             hasLoadedProject: false,
             dragOffset: { x: 0, y: 0 },
@@ -375,6 +378,9 @@ class Store {
         this.state.textDirection = 'auto';
         this.state.siteDescription = '';
         this.state.themeColor = '#4d6bff';
+        this.state.pageTransition = 'fade';
+        this.state.pageTransitionDuration = 450;
+        this.state.pageTransitionEasing = 'ease-in-out';
         this.state.history = [];
         this.state.historyIndex = -1;
         this.saveHistory(); this.notify(); this.saveToStorage();
@@ -458,6 +464,9 @@ class Store {
                 textDirection: this.state.textDirection,
                 siteDescription: this.state.siteDescription,
                 themeColor: this.state.themeColor,
+                pageTransition: this.state.pageTransition,
+                pageTransitionDuration: this.state.pageTransitionDuration,
+                pageTransitionEasing: this.state.pageTransitionEasing,
                 pageSize: this.state.pageSize,
                 gridVisible: this.state.gridVisible,
                 snapEnabled: this.state.snapEnabled,
@@ -485,6 +494,7 @@ class Store {
                 this.state.textDirection = ['auto', 'ltr', 'rtl'].includes(parsed.textDirection) ? parsed.textDirection : 'auto';
                 this.state.siteDescription = String(parsed.siteDescription || '').slice(0, 300);
                 this.state.themeColor = /^#[0-9a-f]{6}$/i.test(parsed.themeColor || '') ? parsed.themeColor : '#4d6bff';
+                this.applyPageTransitionSettings(parsed);
                 this.state.pageSize = this.normalizePageSize(parsed.pageSize);
                 this.state.gridVisible = parsed.gridVisible !== false;
                 this.state.snapEnabled = parsed.snapEnabled !== false;
@@ -506,6 +516,9 @@ class Store {
             textDirection: this.state.textDirection,
             siteDescription: this.state.siteDescription,
             themeColor: this.state.themeColor,
+            pageTransition: this.state.pageTransition,
+            pageTransitionDuration: this.state.pageTransitionDuration,
+            pageTransitionEasing: this.state.pageTransitionEasing,
             pageSize: this.state.pageSize,
             gridVisible: this.state.gridVisible,
             snapEnabled: this.state.snapEnabled,
@@ -534,6 +547,7 @@ class Store {
             this.state.textDirection = ['auto', 'ltr', 'rtl'].includes(data.textDirection) ? data.textDirection : 'auto';
             this.state.siteDescription = String(data.siteDescription || '').slice(0, 300);
             this.state.themeColor = /^#[0-9a-f]{6}$/i.test(data.themeColor || '') ? data.themeColor : '#4d6bff';
+            this.applyPageTransitionSettings(data);
             this.state.pageSize = this.normalizePageSize(data.pageSize);
             this.state.gridVisible = data.gridVisible !== false;
             this.state.snapEnabled = data.snapEnabled !== false;
@@ -564,6 +578,14 @@ class Store {
             width: Number.isFinite(width) ? Math.min(10000, Math.max(100, width)) : 1920,
             height: Number.isFinite(height) ? Math.min(10000, Math.max(100, height)) : 1080
         };
+    }
+
+    applyPageTransitionSettings(data = {}) {
+        const transitions = ['none', 'fade', 'slide-left', 'slide-right', 'slide-up', 'zoom', 'blur', 'flip'];
+        const easings = ['linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out'];
+        this.state.pageTransition = transitions.includes(data.pageTransition) ? data.pageTransition : 'fade';
+        this.state.pageTransitionDuration = Math.min(2000, Math.max(100, Math.round(Number(data.pageTransitionDuration) || 450)));
+        this.state.pageTransitionEasing = easings.includes(data.pageTransitionEasing) ? data.pageTransitionEasing : 'ease-in-out';
     }
 }
 

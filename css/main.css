@@ -247,7 +247,9 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: #46516a; }
 .settings-toggles legend { padding: 0 5px; color: var(--color-black); font-size: 11px; font-weight: 600; }
 .settings-toggles label { display: flex; align-items: center; gap: 6px; color: var(--color-black); font-size: 11px; }
 .settings-toggles input { accent-color: var(--color-accent); }
+.transition-settings { display: grid; grid-template-columns: 1.2fr .8fr 1fr; align-items: start; }
+.transition-settings legend { grid-column: 1 / -1; }
 .notification { border-radius: 8px !important; box-shadow: 0 8px 30px rgba(0,0,0,.18); }
 @keyframes dialog-in { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
 @media (max-width: 1000px) { :root { --sidebar-width: 220px; } #right-sidebar { width: 300px; min-width: 300px; } }
-@media (max-width: 560px) { .settings-grid { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .settings-grid, .transition-settings { grid-template-columns: 1fr; } }

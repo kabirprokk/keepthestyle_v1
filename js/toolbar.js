@@ -433,7 +433,8 @@ class ToolbarManager {
             html += this.renderElementHTML(el, 1);
         });
         
-        html += `    <script>\n${generateSiteRuntime(elements, state.pages).split('\n').map(line => '    ' + line).join('\n')}\n    </script>\n`;
+        const runtime = `${generatePageTransitionRuntime(state)}\n${generateSiteRuntime(elements, state.pages)}`;
+        html += `    <script>\n${runtime.split('\n').map(line => '    ' + line).join('\n')}\n    </script>\n`;
         html += `</body>
 </html>`;
         return html;
@@ -576,6 +577,7 @@ body {
             return `    <main class="kts-preview-page" data-page-id="${escapeHTML(page.id)}"${page.id === state.activePageId ? '' : ' hidden'}>\n${content}    </main>`;
         }).join('\n');
         const runtime = generateSiteRuntime(allElements, state.pages, { preview: true, singleFile: options.download });
+        const transitionRuntime = generatePageTransitionRuntime(state, { preview: true });
         return `<!DOCTYPE html>
 <html lang="${escapeHTML(language)}" dir="${direction}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="${escapeHTML(state.siteDescription || '')}"><meta name="theme-color" content="${escapeHTML(state.themeColor || '#4d6bff')}"><meta name="generator" content="KeepTheStyle"><meta property="og:title" content="${escapeHTML(state.projectName)}"><meta property="og:description" content="${escapeHTML(state.siteDescription || '')}">
@@ -585,7 +587,9 @@ body {
 *{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;font-family:Inter,Arial,sans-serif}.kts-preview-viewport{min-width:100%;min-height:100%;display:flex;overflow:auto}.kts-preview-stage{position:relative;flex:0 0 auto;margin:auto}.kts-preview-page{position:absolute;inset:0 auto auto 0;width:${state.pageSize.width}px;height:${state.pageSize.height}px;overflow:hidden;background:#fff;transform-origin:top left}${getInteractionAnimationCSS()}
 </style></head><body><div class="kts-preview-viewport"><div class="kts-preview-stage">
 ${pages}
-</div></div><script>const ktsPageWidth=${state.pageSize.width};const ktsPageHeight=${state.pageSize.height};function ktsFitPreview(){const scale=Math.min(window.innerWidth/ktsPageWidth,window.innerHeight/ktsPageHeight,1);const stage=document.querySelector('.kts-preview-stage');stage.style.width=(ktsPageWidth*scale)+'px';stage.style.height=(ktsPageHeight*scale)+'px';document.querySelectorAll('.kts-preview-page').forEach(page=>page.style.transform='scale('+scale+')')}window.addEventListener('resize',ktsFitPreview);window.__ktsShowPage=function(id,updateHash=true){const page=[...document.querySelectorAll('.kts-preview-page')].find(item=>item.dataset.pageId===id);if(!page)return;document.querySelectorAll('.kts-preview-page').forEach(item=>item.hidden=item!==page);if(updateHash&&location.hash!=='#'+id)history.pushState(null,'','#'+id);window.scrollTo(0,0);ktsFitPreview()};window.addEventListener('hashchange',()=>window.__ktsShowPage(location.hash.slice(1),false));const ktsInitialPage=location.hash.slice(1)||${safeInlineJSON(state.activePageId)};window.__ktsShowPage(ktsInitialPage,false);ktsFitPreview();
+</div></div><script>const ktsPageWidth=${state.pageSize.width};const ktsPageHeight=${state.pageSize.height};function ktsFitPreview(){const scale=Math.min(window.innerWidth/ktsPageWidth,window.innerHeight/ktsPageHeight,1);const stage=document.querySelector('.kts-preview-stage');stage.style.width=(ktsPageWidth*scale)+'px';stage.style.height=(ktsPageHeight*scale)+'px';document.querySelectorAll('.kts-preview-page').forEach(page=>page.style.transform='scale('+scale+')')}window.addEventListener('resize',ktsFitPreview);
+${transitionRuntime}
+window.__ktsShowPage=function(id,updateHash=true,animate=true){const page=[...document.querySelectorAll('.kts-preview-page')].find(item=>item.dataset.pageId===id);if(!page)return;const swap=()=>{document.querySelectorAll('.kts-preview-page').forEach(item=>item.hidden=item!==page);if(updateHash&&location.hash!=='#'+id)history.pushState(null,'','#'+id);window.scrollTo(0,0);ktsFitPreview()};if(animate&&window.__ktsRunPageTransition)window.__ktsRunPageTransition(swap);else swap()};window.addEventListener('hashchange',()=>window.__ktsShowPage(location.hash.slice(1),false));const ktsInitialPage=location.hash.slice(1)||${safeInlineJSON(state.activePageId)};window.__ktsShowPage(ktsInitialPage,false,false);ktsFitPreview();
 ${runtime}</script></body></html>`;
     }
 
@@ -615,6 +619,7 @@ ${runtime}</script></body></html>`;
                 </div>
                 <div class="media-field"><label for="site-description">Search description</label><textarea id="site-description" maxlength="300" rows="3" placeholder="A concise description of this website">${escapeHTML(state.siteDescription || '')}</textarea><span class="media-help"><span class="description-count">${String(state.siteDescription || '').length}</span>/300 characters</span></div>
                 <div class="media-field color-field"><label for="theme-color">Browser theme color</label><input id="theme-color" type="color" value="${escapeHTML(state.themeColor || '#4d6bff')}"><output>${escapeHTML(state.themeColor || '#4d6bff')}</output></div>
+                <fieldset class="settings-toggles transition-settings"><legend>Page transitions</legend><div class="media-field"><label for="page-transition">Style</label><select id="page-transition"><option value="none">None</option><option value="fade">Fade</option><option value="slide-left">Slide left</option><option value="slide-right">Slide right</option><option value="slide-up">Slide up</option><option value="zoom">Zoom</option><option value="blur">Blur</option><option value="flip">3D flip</option></select></div><div class="media-field"><label for="page-transition-duration">Duration (ms)</label><input id="page-transition-duration" type="number" min="100" max="2000" step="50" value="${Number(state.pageTransitionDuration) || 450}"></div><div class="media-field"><label for="page-transition-easing">Easing</label><select id="page-transition-easing"><option value="linear">Linear</option><option value="ease">Ease</option><option value="ease-in">Ease in</option><option value="ease-out">Ease out</option><option value="ease-in-out">Ease in/out</option></select></div></fieldset>
                 <fieldset class="settings-toggles"><legend>Workspace</legend><label><input id="setting-grid" type="checkbox"${state.gridVisible ? ' checked' : ''}> Show grid</label><label><input id="setting-snap" type="checkbox"${state.snapEnabled ? ' checked' : ''}> Snap to grid</label><label><input id="setting-dark" type="checkbox"${this.isDarkMode ? ' checked' : ''}> Dark mode</label></fieldset>
                 <div class="app-dialog-actions"><button type="button" class="btn settings-cancel">Cancel</button><button type="submit" class="btn btn-primary">Save settings</button></div>
             </form>`;
@@ -627,6 +632,8 @@ ${runtime}</script></body></html>`;
         const color = dialog.querySelector('#theme-color');
         const colorOutput = dialog.querySelector('output');
         direction.value = state.textDirection || 'auto';
+        dialog.querySelector('#page-transition').value = state.pageTransition || 'fade';
+        dialog.querySelector('#page-transition-easing').value = state.pageTransitionEasing || 'ease-in-out';
         const close = () => { document.removeEventListener('keydown', onKeyDown); backdrop.remove(); };
         const onKeyDown = event => { if (event.key === 'Escape') close(); };
         dialog.querySelector('.settings-cancel').addEventListener('click', close);
@@ -648,6 +655,9 @@ ${runtime}</script></body></html>`;
                 textDirection: direction.value,
                 siteDescription: description.value.trim(),
                 themeColor: color.value,
+                pageTransition: dialog.querySelector('#page-transition').value,
+                pageTransitionDuration: Math.min(2000, Math.max(100, Number(dialog.querySelector('#page-transition-duration').value) || 450)),
+                pageTransitionEasing: dialog.querySelector('#page-transition-easing').value,
                 gridVisible: dialog.querySelector('#setting-grid').checked,
                 snapEnabled: dialog.querySelector('#setting-snap').checked
             });
