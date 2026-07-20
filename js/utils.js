@@ -115,18 +115,34 @@ function getInteractionAnimationCSS() {
 .kts-fade-out { animation-name: ktsFadeOut; }
 .kts-slide-up { animation-name: ktsSlideUp; }
 .kts-slide-left { animation-name: ktsSlideLeft; }
+.kts-slide-down { animation-name: ktsSlideDown; }
+.kts-slide-right { animation-name: ktsSlideRight; }
 .kts-zoom-in { animation-name: ktsZoomIn; }
+.kts-zoom-out { animation-name: ktsZoomOut; }
 .kts-bounce { animation-name: ktsBounce; }
 .kts-shake { animation-name: ktsShake; }
 .kts-pulse { animation-name: ktsPulse; }
+.kts-rotate-in { animation-name: ktsRotateIn; }
+.kts-flip-in { animation-name: ktsFlipIn; backface-visibility: hidden; }
+.kts-swing { animation-name: ktsSwing; transform-origin: top center; }
+.kts-float { animation-name: ktsFloat; }
+.kts-blur-in { animation-name: ktsBlurIn; }
 @keyframes ktsFadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes ktsFadeOut { from { opacity: 1; } to { opacity: 0; } }
 @keyframes ktsSlideUp { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
 @keyframes ktsSlideLeft { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+@keyframes ktsSlideDown { from { opacity: 0; transform: translateY(-28px); } to { opacity: 1; transform: none; } }
+@keyframes ktsSlideRight { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
 @keyframes ktsZoomIn { from { opacity: 0; transform: scale(.82); } to { opacity: 1; transform: none; } }
+@keyframes ktsZoomOut { from { opacity: 0; transform: scale(1.18); } to { opacity: 1; transform: none; } }
 @keyframes ktsBounce { 0%,20%,50%,80%,100% { transform: translateY(0); } 40% { transform: translateY(-18px); } 60% { transform: translateY(-8px); } }
 @keyframes ktsShake { 0%,100% { transform: translateX(0); } 20%,60% { transform: translateX(-8px); } 40%,80% { transform: translateX(8px); } }
 @keyframes ktsPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+@keyframes ktsRotateIn { from { opacity: 0; transform: rotate(-12deg) scale(.92); } to { opacity: 1; transform: none; } }
+@keyframes ktsFlipIn { from { opacity: 0; transform: perspective(600px) rotateY(75deg); } to { opacity: 1; transform: perspective(600px) rotateY(0); } }
+@keyframes ktsSwing { 20% { transform: rotate(8deg); } 40% { transform: rotate(-6deg); } 60% { transform: rotate(3deg); } 80% { transform: rotate(-2deg); } 100% { transform: none; } }
+@keyframes ktsFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes ktsBlurIn { from { opacity: 0; filter: blur(12px); } to { opacity: 1; filter: blur(0); } }
 @media (prefers-reduced-motion: reduce) { .kts-animate { animation-duration: .01ms !important; } }`.trim();
 }
 
@@ -171,6 +187,10 @@ function generateSiteRuntime(elements, pages = [], options = {}) {
             case 'hide': target.hidden = true; break;
             case 'toggle': target.hidden = !target.hidden; if (!target.hidden) target.style.visibility = 'visible'; break;
             case 'text': target.textContent = rule.value; break;
+            case 'playMedia': if (typeof target.play === 'function') target.play().catch(() => {}); break;
+            case 'pauseMedia': if (typeof target.pause === 'function') target.pause(); break;
+            case 'restartMedia': if (typeof target.pause === 'function') { target.currentTime = 0; target.play().catch(() => {}); } break;
+            case 'toggleMute': if ('muted' in target) target.muted = !target.muted; break;
             case 'navigate': if (/^(https?:|mailto:|tel:|#)/i.test(rule.value) || rule.value.startsWith('/')) window.location.href = rule.value; break;
             case 'page': if (rule.pageUrl) { if (rule.pageUrl.startsWith('#') && window.__ktsShowPage) window.__ktsShowPage(rule.pageUrl.slice(1)); else window.location.href = rule.pageUrl; } break;
             case 'addClass': rule.value.split(/\\s+/).filter(Boolean).forEach(name => target.classList.add(name)); break;

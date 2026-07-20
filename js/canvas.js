@@ -381,7 +381,9 @@ class CanvasManager {
                 try {
                     if (/^on/i.test(attr) || attr === 'style') return;
                     if (['href', 'src'].includes(attr.toLowerCase()) && /^javascript:/i.test(String(value).trim())) return;
-                    el.setAttribute(attr, value);
+                    if (value === false || value === null || value === undefined) el.removeAttribute(attr);
+                    else if (value === true) el.setAttribute(attr, '');
+                    else el.setAttribute(attr, value);
                 } catch (e) {
                     console.warn(`Failed to set attribute ${attr}:`, e);
                 }

@@ -189,12 +189,16 @@ body {
 
 /* Dark Mode styles */
 body.dark-mode {
-    --color-white: #1A1A1A;
-    --color-light-gray: #242424;
-    --color-gray: #333333;
-    --color-dark-gray: #888888;
-    --color-border: #333333;
-    --color-black: #EEEEEE;
+    --color-white: #151821;
+    --color-light-gray: #1d2230;
+    --color-gray: #2a3142;
+    --color-dark-gray: #aab3c5;
+    --color-border: #30394d;
+    --color-black: #f3f6fc;
+    --color-accent: #7890ff;
+    --color-accent-hover: #91a5ff;
+    color-scheme: dark;
+    background: #10131a;
 }
 
 body.dark-mode .code-editor {
@@ -210,8 +214,13 @@ body.dark-mode .canvas-page {
 }
 
 body.dark-mode .canvas-wrapper {
-    background: #1A1A1A;
+    background: #10131a;
 }
+body.dark-mode .app-dialog-backdrop { background: rgba(3,5,10,.72); }
+body.dark-mode .app-dialog { box-shadow: 0 28px 90px rgba(0,0,0,.58), 0 0 0 1px rgba(255,255,255,.03); }
+body.dark-mode input, body.dark-mode select, body.dark-mode textarea { color-scheme: dark; }
+body.dark-mode ::selection { background: rgba(120,144,255,.38); color: #fff; }
+body.dark-mode ::-webkit-scrollbar-thumb { background: #46516a; }
 
 .app-dialog-backdrop { position: fixed; inset: 0; z-index: 2147483647; display: grid; place-items: center; padding: 20px; background: rgba(10,12,18,.48); backdrop-filter: blur(3px); }
 .app-dialog { width: min(440px, 100%); padding: 22px; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-white); box-shadow: 0 24px 80px rgba(0,0,0,.28); animation: dialog-in 140ms ease-out; }

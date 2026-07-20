@@ -131,7 +131,7 @@ class ToolbarManager {
                 <div class="media-field"><label for="media-type">Media type</label><select id="media-type"><option value="image">Image</option><option value="video">Video</option><option value="audio">Audio</option><option value="embed">YouTube, Vimeo, or embed</option><option value="link">Media link or button</option></select></div>
                 <div class="media-field media-source-field"><label for="media-source">Source</label><select id="media-source"><option value="url">Use a web link</option><option value="upload">Upload a local file</option></select></div>
                 <div class="media-field media-url-field"><label for="media-url">Media URL</label><input id="media-url" type="url" placeholder="https://example.com/media.jpg"><span class="media-help">YouTube and Vimeo links are converted to embeds automatically.</span></div>
-                <div class="media-field media-file-field" hidden><label for="media-file">Choose a local file</label><input id="media-file" type="file" accept="image/*"><span class="media-help">Maximum 4 MB. URLs are recommended for larger videos.</span></div>
+                <div class="media-field media-file-field" hidden><label for="media-file">Choose a local file</label><input id="media-file" type="file" accept="image/*"><span class="media-help">Maximum 20 MB. URLs are recommended for larger videos.</span></div>
                 <div class="media-field media-destination-field"><label for="media-destination">Add image as</label><select id="media-destination"><option value="new">New image element</option></select></div>
                 <div class="media-field media-label-field" hidden><label for="media-label">Link text</label><input id="media-label" type="text" maxlength="120"></div>
                 <div class="app-dialog-actions"><button type="button" class="btn media-cancel">Cancel</button><button type="submit" class="btn btn-primary">Add to canvas</button></div>
@@ -200,7 +200,7 @@ class ToolbarManager {
     readMediaFile(file, type) {
         const expected = { image: 'image/', video: 'video/', audio: 'audio/' }[type];
         if (!expected || !file.type.startsWith(expected)) return Promise.reject(new Error(`Choose a valid ${type} file`));
-        if (file.size > 4 * 1024 * 1024) return Promise.reject(new Error('Local media must be 4 MB or smaller. Use a URL for larger files.'));
+        if (file.size > 20 * 1024 * 1024) return Promise.reject(new Error('Local media must be 20 MB or smaller. Use a URL for larger files.'));
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => resolve(reader.result);
@@ -229,7 +229,7 @@ class ToolbarManager {
         }
         const presets = {
             image: { tag: 'img', width: 480, height: 320, attributes: { src: source, alt: label || 'Image', loading: 'lazy' }, styles: { objectFit: 'contain' } },
-            video: { tag: 'video', width: 640, height: 360, attributes: { src: source, controls: true, preload: 'metadata' }, styles: { objectFit: 'contain', backgroundColor: '#000000' } },
+            video: { tag: 'video', width: 640, height: 360, attributes: { src: source, controls: false, autoplay: true, muted: true, loop: true, playsinline: true, preload: 'auto' }, styles: { objectFit: 'cover', backgroundColor: '#000000' } },
             audio: { tag: 'audio', width: 480, height: 54, attributes: { src: source, controls: true, preload: 'metadata' }, styles: {} },
             embed: { tag: 'iframe', width: 640, height: 360, attributes: { src: type === 'embed' ? this.normalizeEmbedUrl(source) : source, title: label || 'Embedded media', loading: 'lazy', allowfullscreen: true, allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture' }, styles: { border: '0' } },
             link: { tag: 'a', width: 220, height: 48, attributes: { href: source, target: '_blank', rel: 'noopener noreferrer' }, content: label || 'Open media', styles: { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 18px', borderRadius: '8px', backgroundColor: '#4D6BFF', color: '#FFFFFF', textDecoration: 'none', fontWeight: '600' } }

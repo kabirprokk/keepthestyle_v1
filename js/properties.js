@@ -268,7 +268,13 @@ class PropertiesManager {
         const byTag = {
             a: [{ key: 'attr:href', label: 'URL', type: 'text', default: '#' }, { key: 'attr:target', label: 'Target', type: 'select', options: ['_self', '_blank'], default: '_self' }],
             img: [{ key: 'attr:src', label: 'Source', type: 'text', default: '' }, { key: 'attr:alt', label: 'Alt Text', type: 'text', default: '' }],
-            video: [{ key: 'attr:src', label: 'Video Source', type: 'text', default: '' }, { key: 'attr:poster', label: 'Poster Image', type: 'text', default: '' }],
+            video: [
+                { key: 'attr:src', label: 'Video Source', type: 'text', default: '' }, { key: 'attr:poster', label: 'Poster Image', type: 'text', default: '' },
+                { key: 'videoPlayback', label: 'Playback', type: 'select', options: ['play', 'stop'], default: 'play' },
+                { key: 'videoControls', label: 'Player Controls', type: 'select', options: ['hidden', 'visible'], default: 'hidden' },
+                { key: 'videoLoop', label: 'Loop', type: 'select', options: ['on', 'off'], default: 'on' },
+                { key: 'videoMuted', label: 'Sound', type: 'select', options: ['muted', 'on'], default: 'muted' }
+            ],
             audio: [{ key: 'attr:src', label: 'Audio Source', type: 'text', default: '' }],
             input: [{ key: 'attr:type', label: 'Type', type: 'select', options: ['text', 'email', 'number', 'password', 'checkbox', 'radio', 'date'], default: 'text' }, { key: 'attr:placeholder', label: 'Placeholder', type: 'text', default: '' }],
             button: [{ key: 'attr:type', label: 'Type', type: 'select', options: ['button', 'submit', 'reset'], default: 'button' }],
@@ -581,11 +587,11 @@ class PropertiesManager {
         card.appendChild(heading);
 
         const trigger = this.createInteractionSelect('Trigger', interaction.trigger || 'click', [
-            ['click', 'Click'], ['dblclick', 'Double click'], ['mouseenter', 'Mouse enters'], ['mouseleave', 'Mouse leaves'], ['scroll', 'Scrolls into view'], ['load', 'Page loads']
+            ['click', 'Click'], ['dblclick', 'Double click'], ['mouseenter', 'Mouse enters'], ['mouseleave', 'Mouse leaves'], ['focus', 'Receives focus'], ['blur', 'Loses focus'], ['input', 'Input changes'], ['change', 'Value commits'], ['ended', 'Media finishes'], ['scroll', 'Scrolls into view'], ['load', 'Page loads']
         ], value => this.updateInteraction(element, index, { trigger: value }));
         const action = this.createInteractionSelect('Action', interaction.action || 'toggle', [
             ['show', 'Show element'], ['hide', 'Hide element'], ['toggle', 'Toggle visibility'], ['text', 'Change text'],
-            ['navigate', 'Open link'], ['page', 'Go to page'], ['animate', 'Play animation'], ['addClass', 'Add CSS class'], ['removeClass', 'Remove CSS class']
+            ['navigate', 'Open link'], ['page', 'Go to page'], ['animate', 'Play animation'], ['playMedia', 'Play media'], ['pauseMedia', 'Pause media'], ['restartMedia', 'Restart media'], ['toggleMute', 'Toggle sound'], ['addClass', 'Add CSS class'], ['removeClass', 'Remove CSS class']
         ], value => this.updateInteraction(element, index, { action: value, value: value === 'page' ? (this.store.getState().pages[0]?.id || '') : value === 'animate' ? 'fade-in' : '' }));
         card.append(trigger, action);
 
@@ -600,7 +606,7 @@ class PropertiesManager {
                 card.appendChild(this.createInteractionSelect('Destination', interaction.value || this.store.getState().pages[0]?.id, this.store.getState().pages.map(page => [page.id, page.name]), value => this.updateInteraction(element, index, { value })));
             } else if (interaction.action === 'animate') {
                 card.appendChild(this.createInteractionSelect('Animation', interaction.value || 'fade-in', [
-                    ['fade-in', 'Fade in'], ['fade-out', 'Fade out'], ['slide-up', 'Slide up'], ['slide-left', 'Slide left'], ['zoom-in', 'Zoom in'], ['bounce', 'Bounce'], ['shake', 'Shake'], ['pulse', 'Pulse']
+                    ['fade-in', 'Fade in'], ['fade-out', 'Fade out'], ['slide-up', 'Slide up'], ['slide-down', 'Slide down'], ['slide-left', 'Slide left'], ['slide-right', 'Slide right'], ['zoom-in', 'Zoom in'], ['zoom-out', 'Zoom out'], ['rotate-in', 'Rotate in'], ['flip-in', 'Flip in'], ['blur-in', 'Blur in'], ['bounce', 'Bounce'], ['shake', 'Shake'], ['pulse', 'Pulse'], ['swing', 'Swing'], ['float', 'Float']
                 ], value => this.updateInteraction(element, index, { value })));
                 card.appendChild(this.createInteractionSelect('Easing', interaction.easing || 'ease', [['ease', 'Smooth'], ['ease-in', 'Ease in'], ['ease-out', 'Ease out'], ['ease-in-out', 'Ease in/out'], ['linear', 'Linear']], value => this.updateInteraction(element, index, { easing: value })));
                 const timing = document.createElement('div');
@@ -959,7 +965,7 @@ class PropertiesManager {
     }
 
     isMetaProperty(key) {
-        return key.startsWith('attr:') || ['elementName', 'elementId', 'className', 'initialVisibility', 'canvasX', 'canvasY', 'canvasWidth', 'canvasHeight'].includes(key);
+        return key.startsWith('attr:') || ['elementName', 'elementId', 'className', 'initialVisibility', 'canvasX', 'canvasY', 'canvasWidth', 'canvasHeight', 'videoPlayback', 'videoControls', 'videoLoop', 'videoMuted'].includes(key);
     }
 
     getMetaValue(key, element, fallback = '') {
@@ -971,6 +977,10 @@ class PropertiesManager {
         if (key === 'canvasY') return `${element.position?.y || 0}px`;
         if (key === 'canvasWidth') return `${element.size?.width || 200}px`;
         if (key === 'canvasHeight') return `${element.size?.height || 150}px`;
+        if (key === 'videoPlayback') return element.attributes?.autoplay === false ? 'stop' : 'play';
+        if (key === 'videoControls') return element.attributes?.controls ? 'visible' : 'hidden';
+        if (key === 'videoLoop') return element.attributes?.loop === false ? 'off' : 'on';
+        if (key === 'videoMuted') return element.attributes?.muted === false ? 'on' : 'muted';
         if (key.startsWith('attr:')) return (element.attributes || {})[key.slice(5)] ?? fallback;
         return fallback;
     }
@@ -989,6 +999,15 @@ class PropertiesManager {
         if (key === 'canvasWidth' || key === 'canvasHeight') {
             const axis = key === 'canvasWidth' ? 'width' : 'height';
             return this.store.updateElement(element.id, { size: { ...element.size, [axis]: Math.max(1, parseFloat(value) || 1) } });
+        }
+        if (key.startsWith('video')) {
+            const attributes = { ...(element.attributes || {}) };
+            if (key === 'videoPlayback') attributes.autoplay = value === 'play';
+            if (key === 'videoControls') attributes.controls = value === 'visible';
+            if (key === 'videoLoop') attributes.loop = value === 'on';
+            if (key === 'videoMuted') attributes.muted = value === 'muted';
+            if (attributes.autoplay) attributes.playsinline = true;
+            return this.store.updateElement(element.id, { attributes });
         }
         const attr = key === 'elementId' ? 'id' : key === 'className' ? 'class' : key.slice(5);
         const attributes = { ...(element.attributes || {}) };

@@ -8,6 +8,7 @@ The project is built with plain HTML, CSS, and JavaScript. It has no framework d
 
 - Drag-and-drop HTML elements, layout blocks, forms, media, shapes, and navigation components
 - Media dialog for URL-based or embedded images, video, audio, YouTube, Vimeo, iframes, and external links
+- Clean autoplay video blocks with optional controls, looping, sound, play/stop settings, posters, and no-code playback actions
 - Precision canvas with zoom, fit-to-screen, resizing, multi-selection, locking, and layer ordering
 - Functional 10px snap-to-grid with page-bound placement and an `Alt` key precision override
 - Real-time property editing for layout, typography, spacing, borders, effects, transforms, and attributes
@@ -16,6 +17,7 @@ The project is built with plain HTML, CSS, and JavaScript. It has no framework d
 - Multi-page projects with page creation, duplication, renaming, deletion, and navigation actions
 - No-code interactions for clicks, hover, page load, and scroll-into-view events
 - Animation presets with configurable duration, delay, easing, and repetition
+- Sixteen animation presets including slides, zooms, rotate, flip, blur, bounce, pulse, swing, and float
 - Accurate, responsive preview that preserves the canvas coordinate system
 - Live HTML, CSS, and JavaScript generation
 - One-file website export with inline HTML, CSS, and JavaScript, plus multi-page ZIP and editable project-file export
