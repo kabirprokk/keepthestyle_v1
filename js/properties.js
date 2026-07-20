@@ -163,7 +163,7 @@ class PropertiesManager {
         groups['Typography'] = {
             expanded: true,
             properties: [
-                { key: 'fontFamily', label: 'Font Family', type: 'select', options: ['Inter', 'Roboto', 'Poppins', 'Montserrat', 'Oswald', 'Playfair Display', 'Lora', 'Merriweather', 'JetBrains Mono', 'sans-serif', 'serif', 'monospace'], default: 'Inter' },
+                { key: 'fontFamily', label: 'Font Family', type: 'select', options: ['Inter', 'Roboto', 'Open Sans', 'Poppins', 'Montserrat', 'DM Sans', 'Nunito', 'Raleway', 'Rubik', 'Source Sans 3', 'Oswald', 'Bebas Neue', 'Playfair Display', 'Lora', 'Merriweather', 'JetBrains Mono', 'sans-serif', 'serif', 'monospace'], default: 'Inter' },
                 { key: 'fontSize', label: 'Font Size', type: 'number', units: ['px', 'em', 'rem', '%'], default: '16' },
                 { key: 'fontWeight', label: 'Font Weight', type: 'number', min: 100, max: 900, step: 100, default: '400' },
                 { key: 'lineHeight', label: 'Line Height', type: 'number', min: 1, max: 3, step: 0.1, default: '1.5' },

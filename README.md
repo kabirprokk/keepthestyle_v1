@@ -10,6 +10,7 @@ The project is built with plain HTML, CSS, and JavaScript. It has no framework d
 - Precision canvas with zoom, fit-to-screen, resizing, multi-selection, locking, and layer ordering
 - Functional 10px snap-to-grid with page-bound placement and an `Alt` key precision override
 - Real-time property editing for layout, typography, spacing, borders, effects, transforms, and attributes
+- Sixteen open-source Google Font families available directly in the typography inspector
 - Inline text editing directly on the canvas
 - Multi-page projects with page creation, duplication, renaming, deletion, and navigation actions
 - No-code interactions for clicks, hover, page load, and scroll-into-view events
