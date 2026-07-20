@@ -69,6 +69,7 @@ class ToolbarManager {
         this.container.querySelector('[title="Settings"]').addEventListener('click', () => {
             this.openSettings();
         });
+        this.container.querySelector('[title="Design System"]').addEventListener('click', () => this.openDesignSystem());
         const projectName = this.container.querySelector('.project-name');
         projectName.addEventListener('change', e => {
             const value = e.target.value.trim() || 'Untitled Project';
@@ -425,8 +426,10 @@ class ToolbarManager {
             padding: 0;
             box-sizing: border-box;
         }
+        ${this.getDesignTokenCSS(state)}
         body {
-            font-family: 'Inter', -apple-system, sans-serif;
+            font-family: var(--kts-font-body), 'Inter', -apple-system, sans-serif;
+            color: var(--kts-text);
             width: 100%;
             height: 100%;
             overflow: hidden;
@@ -513,6 +516,7 @@ class ToolbarManager {
 
     generateCSS(elements) {
         let css = `/* KeepTheStyle Generated CSS */
+${this.getDesignTokenCSS(this.store.getState())}
         
 * {
     margin: 0;
@@ -603,7 +607,7 @@ body {
 <title>${escapeHTML(state.projectName)}${options.download ? '' : ' Preview'}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&family=Lora:wght@400;500;600;700&family=Merriweather:wght@300;400;700&family=Montserrat:wght@300;400;500;600;700&family=Nunito:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;500;600;700&family=Oswald:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&family=Raleway:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&family=Rubik:wght@300;400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;font-family:Inter,Arial,sans-serif}.kts-preview-viewport{min-width:100%;min-height:100%;display:flex;overflow:auto}.kts-preview-stage{position:relative;flex:0 0 auto;margin:auto}.kts-preview-page{position:absolute;inset:0 auto auto 0;width:${state.pageSize.width}px;height:${state.pageSize.height}px;overflow:hidden;background:#fff;transform-origin:top left}${getInteractionAnimationCSS()}
+${this.getDesignTokenCSS(state)}*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;font-family:var(--kts-font-body),Inter,Arial,sans-serif;color:var(--kts-text)}.kts-preview-viewport{min-width:100%;min-height:100%;display:flex;overflow:auto}.kts-preview-stage{position:relative;flex:0 0 auto;margin:auto}.kts-preview-page{position:absolute;inset:0 auto auto 0;width:${state.pageSize.width}px;height:${state.pageSize.height}px;overflow:hidden;background:var(--kts-surface);transform-origin:top left}${getInteractionAnimationCSS()}
 </style></head><body><div class="kts-preview-viewport"><div class="kts-preview-stage">
 ${pages}
 </div></div><script>const ktsPageWidth=${state.pageSize.width};const ktsPageHeight=${state.pageSize.height};function ktsFitPreview(){const scale=Math.max(window.innerWidth/ktsPageWidth,window.innerHeight/ktsPageHeight);const stage=document.querySelector('.kts-preview-stage');stage.style.width=(ktsPageWidth*scale)+'px';stage.style.height=(ktsPageHeight*scale)+'px';document.querySelector('.kts-preview-viewport').style.background='#000';document.querySelectorAll('.kts-preview-page').forEach(page=>page.style.transform='scale('+scale+')')}window.addEventListener('resize',ktsFitPreview);
@@ -692,8 +696,54 @@ ${runtime}</script></body></html>`;
         language.focus();
     }
 
+    getDesignTokenCSS(state = this.store.getState()) {
+        const tokens = state.designTokens || {};
+        const scheme = state.siteTheme === 'dark' ? 'dark' : state.siteTheme === 'light' ? 'light' : 'light dark';
+        return `:root{color-scheme:${scheme};--kts-primary:${tokens.primary || '#4d6bff'};--kts-secondary:${tokens.secondary || '#7b61ff'};--kts-accent:${tokens.accent || '#20c997'};--kts-surface:${tokens.surface || '#ffffff'};--kts-text:${tokens.text || '#111827'};--kts-muted:${tokens.muted || '#667085'};--kts-radius:${Number(tokens.radius) || 12}px;--kts-space:${Number(tokens.spacing) || 8}px;--kts-font-body:"${tokens.fontBody || 'Inter'}";--kts-font-heading:"${tokens.fontHeading || 'Inter'}";}\n`;
+    }
+
+    applyDesignTokens() {
+        const state = this.store.getState();
+        const tokens = state.designTokens || {};
+        const root = document.documentElement.style;
+        Object.entries({ primary: tokens.primary, secondary: tokens.secondary, accent: tokens.accent, surface: tokens.surface, text: tokens.text, muted: tokens.muted, radius: `${tokens.radius}px`, space: `${tokens.spacing}px`, 'font-body': tokens.fontBody, 'font-heading': tokens.fontHeading }).forEach(([key, value]) => root.setProperty(`--kts-${key}`, value));
+    }
+
+    openDesignSystem() {
+        const state = this.store.getState();
+        const tokens = state.designTokens || {};
+        const backdrop = document.createElement('div'); backdrop.className = 'app-dialog-backdrop';
+        const dialog = document.createElement('div'); dialog.className = 'app-dialog design-system-dialog'; dialog.setAttribute('role', 'dialog'); dialog.setAttribute('aria-modal', 'true'); dialog.setAttribute('aria-labelledby', 'design-system-title');
+        const colorField = (id, label, value) => `<div class="media-field token-color"><label for="${id}">${label}</label><input id="${id}" type="color" value="${escapeHTML(value)}"><output>${escapeHTML(value)}</output></div>`;
+        dialog.innerHTML = `<h2 id="design-system-title">Design System</h2><p>Define reusable CSS variables shared by the editor, preview, and exported website.</p><form class="media-form"><fieldset class="token-grid"><legend>Color styles</legend>${colorField('token-primary','Primary',tokens.primary)}${colorField('token-secondary','Secondary',tokens.secondary)}${colorField('token-accent','Accent',tokens.accent)}${colorField('token-surface','Surface',tokens.surface)}${colorField('token-text','Text',tokens.text)}${colorField('token-muted','Muted',tokens.muted)}</fieldset><div class="settings-grid"><div class="media-field"><label for="token-font-body">Body font</label><input id="token-font-body" value="${escapeHTML(tokens.fontBody || 'Inter')}"></div><div class="media-field"><label for="token-font-heading">Heading font</label><input id="token-font-heading" value="${escapeHTML(tokens.fontHeading || 'Inter')}"></div><div class="media-field"><label for="token-radius">Default radius (px)</label><input id="token-radius" type="number" min="0" max="64" value="${Number(tokens.radius) || 12}"></div><div class="media-field"><label for="token-spacing">Spacing unit (px)</label><input id="token-spacing" type="number" min="2" max="32" value="${Number(tokens.spacing) || 8}"></div></div><div class="media-field"><label for="site-theme">Exported color scheme</label><select id="site-theme"><option value="system">Follow device</option><option value="light">Light</option><option value="dark">Dark</option></select></div><label class="design-apply-selection"><input type="checkbox" id="apply-token-selection"> Apply token styles to selected elements</label><div class="token-reference"><code>var(--kts-primary)</code><code>var(--kts-surface)</code><code>var(--kts-text)</code><code>var(--kts-radius)</code><code>var(--kts-space)</code></div><div class="app-dialog-actions"><button type="button" class="btn design-cancel">Cancel</button><button type="submit" class="btn btn-primary">Save design system</button></div></form>`;
+        backdrop.appendChild(dialog); document.body.appendChild(backdrop); dialog.querySelector('#site-theme').value = state.siteTheme || 'system';
+        dialog.querySelectorAll('.token-color input').forEach(input => input.addEventListener('input', () => { input.parentElement.querySelector('output').value = input.value; }));
+        const close = () => { document.removeEventListener('keydown', onKeyDown); backdrop.remove(); }; const onKeyDown = event => { if (event.key === 'Escape') close(); };
+        document.addEventListener('keydown', onKeyDown); dialog.querySelector('.design-cancel').addEventListener('click', close); backdrop.addEventListener('mousedown', event => { if (event.target === backdrop) close(); });
+        dialog.querySelector('form').addEventListener('submit', event => {
+            event.preventDefault();
+            const designTokens = this.store.normalizeDesignTokens({ primary: dialog.querySelector('#token-primary').value, secondary: dialog.querySelector('#token-secondary').value, accent: dialog.querySelector('#token-accent').value, surface: dialog.querySelector('#token-surface').value, text: dialog.querySelector('#token-text').value, muted: dialog.querySelector('#token-muted').value, radius: dialog.querySelector('#token-radius').value, spacing: dialog.querySelector('#token-spacing').value, fontBody: dialog.querySelector('#token-font-body').value, fontHeading: dialog.querySelector('#token-font-heading').value });
+            this.store.setState({ designTokens, siteTheme: dialog.querySelector('#site-theme').value });
+            if (dialog.querySelector('#apply-token-selection').checked) this.applyTokensToSelection();
+            close(); this.showNotification('Design system saved');
+        });
+        dialog.querySelector('#token-primary').focus();
+    }
+
+    applyTokensToSelection() {
+        const state = this.store.getState();
+        state.selectedElements.forEach(id => {
+            const element = state.elements.find(item => item.id === id); if (!element) return;
+            const styles = { ...element.styles, color: 'var(--kts-text)', borderRadius: 'var(--kts-radius)' };
+            if (/^h[1-6]$/.test(element.tag)) styles.fontFamily = 'var(--kts-font-heading)'; else styles.fontFamily = 'var(--kts-font-body)';
+            if (['button', 'a'].includes(element.tag)) { styles.backgroundColor = 'var(--kts-primary)'; styles.color = 'var(--kts-surface)'; }
+            this.store.updateElement(id, { styles });
+        });
+    }
+
     updateUI() {
         const state = this.store.getState();
+        this.applyDesignTokens();
         const projectNameEl = this.container.querySelector('.project-name');
         if (projectNameEl) {
             if (document.activeElement !== projectNameEl) projectNameEl.value = state.projectName;

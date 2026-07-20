@@ -22,7 +22,7 @@ This matrix tracks the professional-builder roadmap against the current browser-
 | Responsive design | Page presets and full-viewport preview/export | Per-breakpoint style overrides and device visibility |
 | Nested design | Element child data and semantic containers | Visual parent/child drop zones and DOM-tree nesting controls |
 | Components | Page duplication and grouped elements | Named reusable components, instances and override management |
-| Global design | Website metadata and shared font catalog | Design tokens, CSS variable editor and global class manager |
+| Global design | Design System manager, exported CSS variables, theme mode and shared font catalog | Named token sets, aliases and global class manager |
 | Forms | Native form controls and interaction runtime | Visual validation, conditional steps and configurable submission endpoints |
 | Assets | Upload/URL media and embedded project assets | Searchable project library, folders, deduplication and compression UI |
 | Developer tools | Live source, CSS inspector properties and custom code | State/pseudo-element editor, inheritance viewer and breakpoint inspector |

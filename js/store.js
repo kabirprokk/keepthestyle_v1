@@ -29,6 +29,12 @@ class Store {
             siteKeywords: '',
             canonicalUrl: '',
             socialImage: '',
+            siteTheme: 'system',
+            designTokens: {
+                primary: '#4d6bff', secondary: '#7b61ff', accent: '#20c997',
+                surface: '#ffffff', text: '#111827', muted: '#667085',
+                radius: 12, spacing: 8, fontBody: 'Inter', fontHeading: 'Inter'
+            },
             themeColor: '#4d6bff',
             pageTransition: 'fade',
             pageTransitionDuration: 450,
@@ -412,6 +418,8 @@ class Store {
         this.state.siteKeywords = '';
         this.state.canonicalUrl = '';
         this.state.socialImage = '';
+        this.state.siteTheme = 'system';
+        this.state.designTokens = this.normalizeDesignTokens();
         this.state.themeColor = '#4d6bff';
         this.state.pageTransition = 'fade';
         this.state.pageTransitionDuration = 450;
@@ -503,6 +511,8 @@ class Store {
                 siteKeywords: this.state.siteKeywords,
                 canonicalUrl: this.state.canonicalUrl,
                 socialImage: this.state.socialImage,
+                siteTheme: this.state.siteTheme,
+                designTokens: this.state.designTokens,
                 themeColor: this.state.themeColor,
                 pageTransition: this.state.pageTransition,
                 pageTransitionDuration: this.state.pageTransitionDuration,
@@ -537,6 +547,8 @@ class Store {
                 this.state.siteKeywords = String(parsed.siteKeywords || '').slice(0, 300);
                 this.state.canonicalUrl = String(parsed.canonicalUrl || '').slice(0, 500);
                 this.state.socialImage = String(parsed.socialImage || '').slice(0, 2000);
+                this.state.siteTheme = ['system', 'light', 'dark'].includes(parsed.siteTheme) ? parsed.siteTheme : 'system';
+                this.state.designTokens = this.normalizeDesignTokens(parsed.designTokens);
                 this.state.themeColor = /^#[0-9a-f]{6}$/i.test(parsed.themeColor || '') ? parsed.themeColor : '#4d6bff';
                 this.applyPageTransitionSettings(parsed);
                 this.state.pageSize = this.normalizePageSize(parsed.pageSize);
@@ -562,6 +574,8 @@ class Store {
             siteKeywords: this.state.siteKeywords,
             canonicalUrl: this.state.canonicalUrl,
             socialImage: this.state.socialImage,
+            siteTheme: this.state.siteTheme,
+            designTokens: this.state.designTokens,
             themeColor: this.state.themeColor,
             pageTransition: this.state.pageTransition,
             pageTransitionDuration: this.state.pageTransitionDuration,
@@ -597,6 +611,8 @@ class Store {
             this.state.siteKeywords = String(data.siteKeywords || '').slice(0, 300);
             this.state.canonicalUrl = String(data.canonicalUrl || '').slice(0, 500);
             this.state.socialImage = String(data.socialImage || '').slice(0, 2000);
+            this.state.siteTheme = ['system', 'light', 'dark'].includes(data.siteTheme) ? data.siteTheme : 'system';
+            this.state.designTokens = this.normalizeDesignTokens(data.designTokens);
             this.state.themeColor = /^#[0-9a-f]{6}$/i.test(data.themeColor || '') ? data.themeColor : '#4d6bff';
             this.applyPageTransitionSettings(data);
             this.state.pageSize = this.normalizePageSize(data.pageSize);
@@ -628,6 +644,17 @@ class Store {
         return {
             width: Number.isFinite(width) ? Math.min(10000, Math.max(100, width)) : 1920,
             height: Number.isFinite(height) ? Math.min(10000, Math.max(100, height)) : 1080
+        };
+    }
+
+    normalizeDesignTokens(tokens = {}) {
+        const color = (value, fallback) => /^#[0-9a-f]{6}$/i.test(value || '') ? value : fallback;
+        const font = (value, fallback) => String(value || fallback).replace(/[<>"'`;{}]/g, '').trim().slice(0, 80) || fallback;
+        return {
+            primary: color(tokens.primary, '#4d6bff'), secondary: color(tokens.secondary, '#7b61ff'), accent: color(tokens.accent, '#20c997'),
+            surface: color(tokens.surface, '#ffffff'), text: color(tokens.text, '#111827'), muted: color(tokens.muted, '#667085'),
+            radius: Math.min(64, Math.max(0, Number(tokens.radius) || 12)), spacing: Math.min(32, Math.max(2, Number(tokens.spacing) || 8)),
+            fontBody: font(tokens.fontBody, 'Inter'), fontHeading: font(tokens.fontHeading, 'Inter')
         };
     }
 

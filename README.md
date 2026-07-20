@@ -2,7 +2,7 @@
 
 KeepTheStyle is a browser-based, visual website builder for creating multi-page websites without writing code. It combines a precision design canvas, a professional property inspector, no-code interactions, live source generation, and production-ready website export in one lightweight application.
 
-See [FEATURES.md](FEATURES.md) for the implemented capability matrix and architecture-aware roadmap.
+See [FEATURES.md](FEATURES.md) for the implemented capability matrix and [PLATFORM_ROADMAP.md](PLATFORM_ROADMAP.md) for the staged architecture covering responsive layout, reusable components, motion timelines, effects, 3D and professional inspection.
 
 The project is built with plain HTML, CSS, and JavaScript. It has no framework dependency, package installation, compilation step, or backend requirement.
 
@@ -14,6 +14,7 @@ The project is built with plain HTML, CSS, and JavaScript. It has no framework d
 - Optimized large-media editing with lazy canvas video loading, compact undo snapshots, and revision-aware rendering and autosave
 - Precision canvas with zoom, fit-to-screen, resizing, multi-selection, locking, and layer ordering
 - Logical Group/Ungroup with grouped selection and movement, plus 10%–800% manual zoom
+- Design System manager with reusable color, typography, spacing and radius tokens exported as CSS variables
 - Designer-style Layers workspace with live selection, renaming, visibility, locking, and front-to-back reordering
 - Functional 10px snap-to-grid with page-bound placement and an `Alt` key precision override
 - Real-time property editing for layout, typography, spacing, borders, effects, transforms, and attributes

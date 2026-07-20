@@ -206,6 +206,8 @@ class CodePanel {
 
     generateCSS(elements) {
         let css = `/* KeepTheStyle Generated CSS */\n\n`;
+        const tokens = this.store.getState().designTokens || {};
+        css += `:root {\n    --kts-primary: ${tokens.primary || '#4d6bff'};\n    --kts-secondary: ${tokens.secondary || '#7b61ff'};\n    --kts-accent: ${tokens.accent || '#20c997'};\n    --kts-surface: ${tokens.surface || '#ffffff'};\n    --kts-text: ${tokens.text || '#111827'};\n    --kts-muted: ${tokens.muted || '#667085'};\n    --kts-radius: ${Number(tokens.radius) || 12}px;\n    --kts-space: ${Number(tokens.spacing) || 8}px;\n}\n\n`;
         css += `* {\n`;
         css += `    margin: 0;\n`;
         css += `    padding: 0;\n`;
