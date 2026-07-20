@@ -158,6 +158,13 @@ function getInteractionAnimationCSS() {
 @media (prefers-reduced-motion: reduce) { .kts-animate { animation-duration: .01ms !important; } }`.trim();
 }
 
+if (typeof document !== 'undefined') {
+    const editorAnimationStyles = document.createElement('style');
+    editorAnimationStyles.id = 'kts-animation-presets';
+    editorAnimationStyles.textContent = getInteractionAnimationCSS();
+    document.head.appendChild(editorAnimationStyles);
+}
+
 function generateInteractionRuntime(elements, pages = []) {
     const rules = [];
     (elements || []).forEach(source => {

@@ -214,7 +214,7 @@ class CodePanel {
                 css += `}\n\n`;
             }
         });
-        if (elements.some(el => (el.interactions || []).some(rule => rule.action === 'animate'))) css += `${getInteractionAnimationCSS()}\n`;
+        if (elements.some(el => el.styles?.animationName?.startsWith('kts') || (el.interactions || []).some(rule => rule.action === 'animate'))) css += `${getInteractionAnimationCSS()}\n`;
         return css;
     }
 

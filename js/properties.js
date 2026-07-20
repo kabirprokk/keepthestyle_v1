@@ -102,6 +102,20 @@ class PropertiesManager {
             'Interactions': { expanded: true, properties: [
                 { key: 'interactions', label: 'Interactions', type: 'interactions' }
             ]},
+            'Animation & Transition': { expanded: true, properties: [
+                { key: 'animationPreset', label: 'Animation', type: 'select', options: ['none', 'fade-in', 'fade-out', 'slide-up', 'slide-down', 'slide-left', 'slide-right', 'zoom-in', 'zoom-out', 'rotate-in', 'flip-in', 'blur-in', 'reveal-up', 'roll-in', 'skew-in', 'bounce', 'shake', 'wobble', 'pulse', 'heartbeat', 'flash', 'swing', 'float'], default: 'none' },
+                { key: 'animationDuration', label: 'Duration', type: 'number', units: ['ms', 's'], min: 0, step: 50, default: '600ms' },
+                { key: 'animationDelay', label: 'Delay', type: 'number', units: ['ms', 's'], min: 0, step: 50, default: '0ms' },
+                { key: 'animationTimingFunction', label: 'Easing', type: 'select', options: ['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'cubic-bezier(.2,.8,.2,1)'], default: 'ease' },
+                { key: 'animationIterationCount', label: 'Repeats', type: 'number', min: 1, max: 100, step: 1, default: '1' },
+                { key: 'animationDirection', label: 'Direction', type: 'select', options: ['normal', 'reverse', 'alternate', 'alternate-reverse'], default: 'normal' },
+                { key: 'animationFillMode', label: 'After Animation', type: 'select', options: ['none', 'forwards', 'backwards', 'both'], default: 'both' },
+                { key: 'animationPlayState', label: 'Playback', type: 'select', options: ['running', 'paused'], default: 'running' },
+                { key: 'transitionProperty', label: 'Transition Property', type: 'text', default: 'all' },
+                { key: 'transitionDuration', label: 'Transition Duration', type: 'number', units: ['ms', 's'], min: 0, step: 50, default: '180ms' },
+                { key: 'transitionTimingFunction', label: 'Transition Easing', type: 'select', options: ['ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'cubic-bezier(.2,.8,.2,1)'], default: 'ease' },
+                { key: 'transitionDelay', label: 'Transition Delay', type: 'number', units: ['ms', 's'], min: 0, step: 50, default: '0ms' }
+            ]},
             'Position & Size': { expanded: true, properties: [
                 { key: 'canvasX', label: 'X', type: 'number', units: ['px'], default: '0', min: 0 },
                 { key: 'canvasY', label: 'Y', type: 'number', units: ['px'], default: '0', min: 0 },
@@ -982,7 +996,7 @@ class PropertiesManager {
     }
 
     isMetaProperty(key) {
-        return key.startsWith('attr:') || ['elementName', 'elementId', 'className', 'initialVisibility', 'canvasX', 'canvasY', 'canvasWidth', 'canvasHeight', 'videoPlayback', 'videoControls', 'videoLoop', 'videoMuted'].includes(key);
+        return key.startsWith('attr:') || ['elementName', 'elementId', 'className', 'initialVisibility', 'canvasX', 'canvasY', 'canvasWidth', 'canvasHeight', 'animationPreset', 'videoPlayback', 'videoControls', 'videoLoop', 'videoMuted'].includes(key);
     }
 
     getMetaValue(key, element, fallback = '') {
@@ -994,6 +1008,10 @@ class PropertiesManager {
         if (key === 'canvasY') return `${element.position?.y || 0}px`;
         if (key === 'canvasWidth') return `${element.size?.width || 200}px`;
         if (key === 'canvasHeight') return `${element.size?.height || 150}px`;
+        if (key === 'animationPreset') {
+            const names = { ktsFadeIn: 'fade-in', ktsFadeOut: 'fade-out', ktsSlideUp: 'slide-up', ktsSlideDown: 'slide-down', ktsSlideLeft: 'slide-left', ktsSlideRight: 'slide-right', ktsZoomIn: 'zoom-in', ktsZoomOut: 'zoom-out', ktsRotateIn: 'rotate-in', ktsFlipIn: 'flip-in', ktsBlurIn: 'blur-in', ktsRevealUp: 'reveal-up', ktsRollIn: 'roll-in', ktsSkewIn: 'skew-in', ktsBounce: 'bounce', ktsShake: 'shake', ktsWobble: 'wobble', ktsPulse: 'pulse', ktsHeartbeat: 'heartbeat', ktsFlash: 'flash', ktsSwing: 'swing', ktsFloat: 'float' };
+            return names[element.styles?.animationName] || 'none';
+        }
         if (key === 'videoPlayback') return element.attributes?.autoplay === false ? 'stop' : 'play';
         if (key === 'videoControls') return element.attributes?.controls ? 'visible' : 'hidden';
         if (key === 'videoLoop') return element.attributes?.loop === false ? 'off' : 'on';
@@ -1022,6 +1040,19 @@ class PropertiesManager {
         if (key === 'canvasWidth' || key === 'canvasHeight') {
             const axis = key === 'canvasWidth' ? 'width' : 'height';
             return this.store.updateElement(element.id, { size: { ...element.size, [axis]: Math.max(1, parseFloat(value) || 1) } });
+        }
+        if (key === 'animationPreset') {
+            const names = { 'fade-in': 'ktsFadeIn', 'fade-out': 'ktsFadeOut', 'slide-up': 'ktsSlideUp', 'slide-down': 'ktsSlideDown', 'slide-left': 'ktsSlideLeft', 'slide-right': 'ktsSlideRight', 'zoom-in': 'ktsZoomIn', 'zoom-out': 'ktsZoomOut', 'rotate-in': 'ktsRotateIn', 'flip-in': 'ktsFlipIn', 'blur-in': 'ktsBlurIn', 'reveal-up': 'ktsRevealUp', 'roll-in': 'ktsRollIn', 'skew-in': 'ktsSkewIn', bounce: 'ktsBounce', shake: 'ktsShake', wobble: 'ktsWobble', pulse: 'ktsPulse', heartbeat: 'ktsHeartbeat', flash: 'ktsFlash', swing: 'ktsSwing', float: 'ktsFloat' };
+            const styles = { ...element.styles };
+            if (value === 'none') delete styles.animationName;
+            else {
+                styles.animationName = names[value];
+                styles.animationDuration ||= '600ms';
+                styles.animationTimingFunction ||= 'ease';
+                styles.animationIterationCount ||= '1';
+                styles.animationFillMode ||= 'both';
+            }
+            return this.store.updateElement(element.id, { styles });
         }
         if (key.startsWith('video')) {
             const attributes = { ...(element.attributes || {}) };

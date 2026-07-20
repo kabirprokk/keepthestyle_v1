@@ -109,8 +109,8 @@
     position: absolute;
     cursor: move;
     user-select: none;
-    transition: none !important;
 }
+.canvas-interacting .canvas-page > * { transition: none !important; }
 
 .canvas-page > *.selected {
     outline: 2px solid var(--color-accent);

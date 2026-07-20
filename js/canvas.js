@@ -449,6 +449,7 @@ class CanvasManager {
             // Start drag
             this.isDragging = true;
             this.dragTarget = el;
+            document.body.classList.add('canvas-interacting');
             const rect = el.getBoundingClientRect();
             this.dragOffset = {
                 x: e.clientX - rect.left,
@@ -708,5 +709,6 @@ document.addEventListener('mouseup', () => {
         manager.isDragging = false;
         manager.dragTarget = null;
         manager.dragGroup = null;
+        document.body.classList.remove('canvas-interacting');
     }
 });
