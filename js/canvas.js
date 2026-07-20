@@ -327,9 +327,10 @@ class CanvasManager {
                 Math.max(...items.map(item => -(item.position?.y || 0))),
                 Math.min(delta.y, Math.min(...items.map(item => state.pageSize.height - (item.position?.y || 0) - (item.size?.height || 1))))
             );
-            items.forEach(item => {
-                this.store.updateElement(item.id, { position: { x: (item.position?.x || 0) + dx, y: (item.position?.y || 0) + dy } });
-            });
+            this.store.updateElements(items.map(item => ({
+                id: item.id,
+                updates: { position: { x: (item.position?.x || 0) + dx, y: (item.position?.y || 0) + dy } }
+            })));
         });
     }
 
@@ -607,7 +608,10 @@ class CanvasManager {
         overlay.style.top = `${element.position?.y || 0}px`;
         overlay.style.width = `${element.size?.width || 1}px`;
         overlay.style.height = `${element.size?.height || 1}px`;
-        overlay.innerHTML = `<div class="selection-tag">${element.name || element.tag}${element.locked ? ' · Locked' : ''}</div>`;
+        const tag = document.createElement('div');
+        tag.className = 'selection-tag';
+        tag.textContent = `${element.name || element.tag}${element.locked ? ' · Locked' : ''}`;
+        overlay.appendChild(tag);
         if (!element.locked) {
             ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].forEach(direction => {
                 const handle = document.createElement('button');
@@ -747,7 +751,12 @@ class CanvasManager {
         else if (action === 'ungroup') this.store.ungroupElements();
         else if (action === 'delete') this.store.deleteElement(id);
         else if (action === 'lock') this.store.updateElement(id, { locked: !element.locked });
-        else if (action === 'visibility') this.store.updateElement(id, { hidden: !element.hidden, styles: { ...element.styles, visibility: element.hidden ? 'visible' : 'hidden' } });
+        else if (action === 'visibility') {
+            const styles = { ...element.styles };
+            if (!element.hidden) styles.visibility = 'hidden';
+            else if (styles.visibility === 'hidden') delete styles.visibility;
+            this.store.updateElement(id, { hidden: !element.hidden, styles });
+        }
         else if (['front', 'forward', 'backward', 'back'].includes(action)) this.store.reorderElement(id, action);
         else if (action === 'edit') this.startInlineEditing(this.canvasPage.querySelector(`[data-id="${id}"]`), element);
     }
@@ -804,10 +813,11 @@ document.addEventListener('mouseup', () => {
     if (window.canvasManager?.interaction?.type === 'resize') { window.canvasManager.finishResize(); return; }
     if (window.canvasManager && window.canvasManager.isDragging && window.canvasManager.dragTarget) {
         const manager = window.canvasManager;
-        (manager.dragGroup || []).forEach(item => {
+        const updates = (manager.dragGroup || []).map(item => {
             const node = manager.canvasPage.querySelector(`[data-id="${item.id}"]`);
-            if (node) window.store.updateElement(item.id, { position: { x: parseFloat(node.style.left) || 0, y: parseFloat(node.style.top) || 0 } });
-        });
+            return node ? { id: item.id, updates: { position: { x: parseFloat(node.style.left) || 0, y: parseFloat(node.style.top) || 0 } } } : null;
+        }).filter(Boolean);
+        window.store.updateElements(updates, { immediateHistory: true });
         
         manager.isDragging = false;
         manager.dragTarget = null;

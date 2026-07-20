@@ -235,8 +235,27 @@ class Store {
             this.notify();
             this.saveToStorage();
             clearTimeout(this.updateHistoryTimer);
-            this.updateHistoryTimer = setTimeout(() => this.saveHistory(), 250);
+            this.updateHistoryTimer = setTimeout(() => { this.saveHistory(); this.notify(false); }, 250);
         }
+    }
+
+    updateElements(updates, options = {}) {
+        const entries = Array.isArray(updates) ? updates : [];
+        let changed = false;
+        entries.forEach(entry => {
+            const element = this.state.elements.find(item => item.id === entry?.id);
+            if (!element || !entry.updates) return;
+            Object.assign(element, entry.updates);
+            changed = true;
+        });
+        if (!changed) return false;
+        clearTimeout(this.updateHistoryTimer);
+        if (options.immediateHistory) this.saveHistory();
+        else this.updateHistoryTimer = setTimeout(() => { this.saveHistory(); this.notify(false); }, 250);
+        this.syncActivePage();
+        this.notify();
+        this.saveToStorage();
+        return true;
     }
 
     selectElement(id) {
@@ -273,6 +292,7 @@ class Store {
                     y: Math.max(0, Math.min(element.position.y + 20, this.state.pageSize.height - (element.size?.height || 1)))
                 }
             });
+            if (newElement.attributes?.id) delete newElement.attributes.id;
             newElement.interactions = (newElement.interactions || []).map(rule => ({ ...rule, targetId: rule.targetId === id ? newElement.id : rule.targetId }));
             delete newElement.groupId;
             this.state.elements.push(newElement);
@@ -294,6 +314,7 @@ class Store {
             }
         }));
         copies.forEach(copy => { if (copy.groupId) { if (!groupMap.has(copy.groupId)) groupMap.set(copy.groupId, `group_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`); copy.groupId = groupMap.get(copy.groupId); } });
+        copies.forEach(copy => { if (copy.attributes?.id) delete copy.attributes.id; });
         copies.forEach(copy => { copy.interactions = (copy.interactions || []).map(rule => ({ ...rule, targetId: idMap.get(rule.targetId) || rule.targetId })); });
         if (!copies.length) return;
         this.state.elements.push(...copies);
@@ -314,6 +335,7 @@ class Store {
             y: Math.max(0, Math.min((element.position?.y || 0) + 20, this.state.pageSize.height - (element.size?.height || 1)))
         } }));
         copies.forEach(copy => { if (copy.groupId) { if (!groupMap.has(copy.groupId)) groupMap.set(copy.groupId, `group_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`); copy.groupId = groupMap.get(copy.groupId); } });
+        copies.forEach(copy => { if (copy.attributes?.id) delete copy.attributes.id; });
         copies.forEach(copy => { copy.interactions = (copy.interactions || []).map(rule => ({ ...rule, targetId: idMap.get(rule.targetId) || rule.targetId })); });
         this.state.clipboard = copies.map(deepClone);
         this.state.elements.push(...copies);
@@ -590,17 +612,49 @@ class Store {
 
     importProject(data) {
         try {
-            if (!data || !Array.isArray(data.elements)) throw new Error('Invalid project file');
-            const normalizeElements = items => (items || []).map(item => ({
-                ...item,
-                id: item.id || this.generateId(),
-                tag: /^[a-z][a-z0-9-]*$/i.test(item.tag || '') ? item.tag.toLowerCase() : 'div',
-                position: item.position || { x: 100, y: 100 },
-                size: item.size || { width: 200, height: 150 },
-                styles: item.styles || {}, attributes: item.attributes || {}, children: item.children || []
+            if (!data || (!Array.isArray(data.elements) && !Array.isArray(data.pages))) throw new Error('Invalid project file');
+            const usedElementIds = new Set();
+            const normalizeElements = items => (Array.isArray(items) ? items : []).map(item => {
+                let id = safeDomId(item?.id || this.generateId(), this.generateId());
+                while (usedElementIds.has(id)) id = this.generateId();
+                usedElementIds.add(id);
+                const x = Number(item?.position?.x), y = Number(item?.position?.y);
+                const width = Number(item?.size?.width), height = Number(item?.size?.height);
+                const attributes = item?.attributes && typeof item.attributes === 'object' && !Array.isArray(item.attributes) ? { ...item.attributes } : {};
+                Object.keys(attributes).forEach(key => { if (/^on/i.test(key) || key === 'style') delete attributes[key]; });
+                return {
+                    ...item,
+                    id,
+                    tag: /^[a-z][a-z0-9-]*$/i.test(item?.tag || '') ? item.tag.toLowerCase() : 'div',
+                    name: String(item?.name || item?.tag || 'Element').slice(0, 100),
+                    position: { x: Number.isFinite(x) ? Math.max(0, x) : 100, y: Number.isFinite(y) ? Math.max(0, y) : 100 },
+                    size: { width: Number.isFinite(width) ? Math.max(1, width) : 200, height: Number.isFinite(height) ? Math.max(1, height) : 150 },
+                    styles: item?.styles && typeof item.styles === 'object' && !Array.isArray(item.styles) ? item.styles : {},
+                    attributes,
+                    interactions: Array.isArray(item?.interactions) ? item.interactions : [],
+                    children: Array.isArray(item?.children) ? item.children : []
+                };
+            });
+            const usedPageIds = new Set();
+            const usedSlugs = new Set();
+            const pageIdMap = new Map();
+            this.state.pages = Array.isArray(data.pages) && data.pages.length ? data.pages.map((page, index) => {
+                let id = safeDomId(page?.id || this.generatePageId(), this.generatePageId());
+                while (usedPageIds.has(id)) id = this.generatePageId();
+                usedPageIds.add(id);
+                if (page?.id) pageIdMap.set(String(page.id), id);
+                const name = String(page?.name || `Page ${index + 1}`).trim().slice(0, 50) || `Page ${index + 1}`;
+                let slug = index === 0 ? 'index' : safeDomId(page?.slug || name.toLowerCase(), `page-${index + 1}`);
+                const base = slug;
+                let suffix = 2;
+                while (usedSlugs.has(slug)) slug = `${base}-${suffix++}`;
+                usedSlugs.add(slug);
+                return { id, name, slug, elements: normalizeElements(page?.elements), history: [], historyIndex: -1 };
+            }) : [];
+            this.state.pages.forEach(page => page.elements.forEach(element => {
+                element.interactions = element.interactions.map(rule => rule?.action === 'page' && pageIdMap.has(String(rule.value)) ? { ...rule, value: pageIdMap.get(String(rule.value)) } : rule);
             }));
-            this.state.pages = Array.isArray(data.pages) && data.pages.length ? data.pages.map(page => ({ ...page, id: page.id || this.generatePageId(), name: page.name || 'Page', slug: page.slug || safeDomId(page.name?.toLowerCase(), 'page'), elements: normalizeElements(page.elements) })) : [];
-            this.state.activePageId = data.activePageId || this.state.pages[0]?.id || null;
+            this.state.activePageId = pageIdMap.get(String(data.activePageId)) || this.state.pages[0]?.id || null;
             this.state.elements = this.state.pages.length ? [] : normalizeElements(data.elements);
             this.ensurePageModel();
             this.state.selectedElements = [];
@@ -614,7 +668,7 @@ class Store {
             this.state.siteTheme = ['system', 'light', 'dark'].includes(data.siteTheme) ? data.siteTheme : 'system';
             this.state.designTokens = this.normalizeDesignTokens(data.designTokens);
             this.state.themeColor = /^#[0-9a-f]{6}$/i.test(data.themeColor || '') ? data.themeColor : '#4d6bff';
-            this.applyPageTransitionSettings(data);
+            this.applyPageTransitionSettings({ ...data, pageTransitions: (data.pageTransitions || []).map(route => ({ ...route, fromId: pageIdMap.get(String(route.fromId)) || route.fromId, toId: pageIdMap.get(String(route.toId)) || route.toId })) });
             this.state.pageSize = this.normalizePageSize(data.pageSize);
             this.state.gridVisible = data.gridVisible !== false;
             this.state.snapEnabled = data.snapEnabled !== false;
@@ -661,10 +715,18 @@ class Store {
     applyPageTransitionSettings(data = {}) {
         const transitions = ['none', 'fade', 'slide-left', 'slide-right', 'slide-up', 'zoom', 'blur', 'flip'];
         const easings = ['linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out'];
+        const pageIds = new Set((this.state.pages || []).map(page => page.id));
         this.state.pageTransition = transitions.includes(data.pageTransition) ? data.pageTransition : 'fade';
         this.state.pageTransitionDuration = Math.min(2000, Math.max(100, Math.round(Number(data.pageTransitionDuration) || 450)));
         this.state.pageTransitionEasing = easings.includes(data.pageTransitionEasing) ? data.pageTransitionEasing : 'ease-in-out';
-        this.state.pageTransitions = Array.isArray(data.pageTransitions) ? data.pageTransitions.filter(route => route && typeof route.fromId === 'string' && typeof route.toId === 'string').map(route => ({
+        const routeKeys = new Set();
+        this.state.pageTransitions = Array.isArray(data.pageTransitions) ? data.pageTransitions.filter(route => {
+            if (!route || !pageIds.has(route.fromId) || !pageIds.has(route.toId) || route.fromId === route.toId) return false;
+            const key = `${route.fromId}\u0000${route.toId}`;
+            if (routeKeys.has(key)) return false;
+            routeKeys.add(key);
+            return true;
+        }).map(route => ({
             fromId: route.fromId,
             toId: route.toId,
             type: transitions.includes(route.type) ? route.type : this.state.pageTransition,

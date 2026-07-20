@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         
         console.log('🚀 KeepTheStyle initialized successfully!');
-        console.log('Version: 2.2.0');
+        console.log('Version: 2.3.0');
         
         // Add initial demo elements if canvas is empty
         const state = window.store.getState();

@@ -1029,12 +1029,12 @@ class PropertiesManager {
             return;
         }
         if (key === 'content') {
-            targets.forEach(id => this.store.updateElement(id, { content: value }));
+            this.store.updateElements(targets.map(id => ({ id, updates: { content: value } })));
         } else {
-            targets.forEach(id => {
+            this.store.updateElements(targets.map(id => {
                 const target = this.store.getState().elements.find(item => item.id === id);
-                if (target) this.store.updateElement(id, { styles: { ...target.styles, [key]: value } });
-            });
+                return target ? { id, updates: { styles: { ...target.styles, [key]: value } } } : null;
+            }).filter(Boolean));
         }
     }
 
@@ -1122,7 +1122,16 @@ class PropertiesManager {
         }
         const attr = key === 'elementId' ? 'id' : key === 'className' ? 'class' : key.slice(5);
         const attributes = { ...(element.attributes || {}) };
-        if (value === '') delete attributes[attr]; else attributes[attr] = value;
+        if (value === '') delete attributes[attr];
+        else if (attr === 'id') {
+            const requested = safeDomId(value, element.id);
+            const used = new Set(this.store.getState().elements.filter(item => item.id !== element.id).map(item => safeDomId(item.attributes?.id || item.id)));
+            let unique = requested;
+            let suffix = 2;
+            while (used.has(unique)) unique = `${requested}-${suffix++}`;
+            attributes.id = unique;
+            if (unique !== requested) showToast(`HTML ID changed to ${unique} to keep it unique`);
+        } else attributes[attr] = value;
         this.store.updateElement(element.id, { attributes });
     }
 
@@ -1130,13 +1139,13 @@ class PropertiesManager {
         if (prop.key === 'content') return this.updateProperty(prop.key, prop.default || '', element);
         if (this.isMetaProperty(prop.key)) return this.updateProperty(prop.key, '', element);
         const targets = this.store.getState().selectedElements;
-        targets.forEach(id => {
+        this.store.updateElements(targets.map(id => {
             const target = this.store.getState().elements.find(item => item.id === id);
-            if (!target) return;
+            if (!target) return null;
             const styles = { ...target.styles };
             delete styles[prop.key];
-            this.store.updateElement(id, { styles });
-        });
+            return { id, updates: { styles } };
+        }).filter(Boolean));
     }
 
     updateShadowProperty(key, val, element) {
