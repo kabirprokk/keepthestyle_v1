@@ -575,7 +575,8 @@ body {
         const allElements = state.pages.flatMap(page => page.elements || []);
         const pages = state.pages.map(page => {
             const content = (page.elements || []).map(element => this.renderElementHTML(element, 2)).join('');
-            return `    <main class="kts-preview-page" data-page-id="${escapeHTML(page.id)}"${page.id === state.activePageId ? '' : ' hidden'}>\n${content}    </main>`;
+            const fullBleed = this.pageHasFullBleedBackground(page.elements || [], state.pageSize);
+            return `    <main class="kts-preview-page" data-page-id="${escapeHTML(page.id)}" data-preview-fit="${fullBleed ? 'cover' : 'contain'}"${page.id === state.activePageId ? '' : ' hidden'}>\n${content}    </main>`;
         }).join('\n');
         const runtime = generateSiteRuntime(allElements, state.pages, { preview: true, singleFile: options.download });
         const transitionRuntime = generatePageTransitionRuntime(state, { preview: true, currentPageId: state.activePageId });
@@ -588,10 +589,21 @@ body {
 *{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;font-family:Inter,Arial,sans-serif}.kts-preview-viewport{min-width:100%;min-height:100%;display:flex;overflow:auto}.kts-preview-stage{position:relative;flex:0 0 auto;margin:auto}.kts-preview-page{position:absolute;inset:0 auto auto 0;width:${state.pageSize.width}px;height:${state.pageSize.height}px;overflow:hidden;background:#fff;transform-origin:top left}${getInteractionAnimationCSS()}
 </style></head><body><div class="kts-preview-viewport"><div class="kts-preview-stage">
 ${pages}
-</div></div><script>const ktsPageWidth=${state.pageSize.width};const ktsPageHeight=${state.pageSize.height};function ktsFitPreview(){const scale=Math.min(window.innerWidth/ktsPageWidth,window.innerHeight/ktsPageHeight,1);const stage=document.querySelector('.kts-preview-stage');stage.style.width=(ktsPageWidth*scale)+'px';stage.style.height=(ktsPageHeight*scale)+'px';document.querySelectorAll('.kts-preview-page').forEach(page=>page.style.transform='scale('+scale+')')}window.addEventListener('resize',ktsFitPreview);
+</div></div><script>const ktsPageWidth=${state.pageSize.width};const ktsPageHeight=${state.pageSize.height};function ktsFitPreview(){const active=document.querySelector('.kts-preview-page:not([hidden])');const cover=active?.dataset.previewFit==='cover';const ratios=[window.innerWidth/ktsPageWidth,window.innerHeight/ktsPageHeight];const scale=cover?Math.max(...ratios):Math.min(...ratios,1);const stage=document.querySelector('.kts-preview-stage');stage.style.width=(ktsPageWidth*scale)+'px';stage.style.height=(ktsPageHeight*scale)+'px';document.querySelector('.kts-preview-viewport').style.background=cover?'#000':'';document.querySelectorAll('.kts-preview-page').forEach(page=>page.style.transform='scale('+scale+')')}window.addEventListener('resize',ktsFitPreview);
 ${transitionRuntime}
 window.__ktsShowPage=function(id,updateHash=true,animate=true){const page=[...document.querySelectorAll('.kts-preview-page')].find(item=>item.dataset.pageId===id);if(!page)return;const swap=()=>{document.querySelectorAll('.kts-preview-page').forEach(item=>item.hidden=item!==page);if(window.__ktsSetCurrentPage)window.__ktsSetCurrentPage(id);if(updateHash&&location.hash!=='#'+id)history.pushState(null,'','#'+id);window.scrollTo(0,0);ktsFitPreview()};if(animate&&window.__ktsRunPageTransition)window.__ktsRunPageTransition(swap,id);else swap()};window.addEventListener('hashchange',()=>window.__ktsShowPage(location.hash.slice(1),false));const ktsInitialPage=location.hash.slice(1)||${safeInlineJSON(state.activePageId)};window.__ktsShowPage(ktsInitialPage,false,false);ktsFitPreview();
 ${runtime}</script></body></html>`;
+    }
+
+    pageHasFullBleedBackground(elements, pageSize) {
+        return elements.some(element => {
+            const position = element.position || {};
+            const size = element.size || {};
+            const isMedia = ['img', 'video'].includes(element.tag) || Boolean(element.styles?.backgroundImage);
+            return isMedia && (Number(position.x) || 0) <= 2 && (Number(position.y) || 0) <= 2
+                && (Number(size.width) || 0) >= pageSize.width * 0.9
+                && (Number(size.height) || 0) >= pageSize.height * 0.9;
+        });
     }
 
     toggleDarkMode() {

@@ -24,6 +24,7 @@ The project is built with plain HTML, CSS, and JavaScript. It has no framework d
 - Twenty-two animation presets including slides, zooms, rotate, flip, blur, reveal, roll, skew, wobble, heartbeat, swing, and float
 - First-class animation and transition controls on every element for timing, delay, easing, repeats, direction, fill behavior, and playback state
 - Accurate, responsive preview that preserves the canvas coordinate system
+- Full-bleed background detection that removes preview gutters by fitting canvas-sized images and videos to the browser viewport
 - Live HTML, CSS, and JavaScript generation
 - One-file website export with inline HTML, CSS, and JavaScript, plus multi-page ZIP and editable project-file export
 - International website settings for language codes, automatic/LTR/RTL direction, search descriptions, browser theme color, and social metadata
