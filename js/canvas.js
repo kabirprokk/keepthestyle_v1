@@ -109,7 +109,24 @@ class CanvasManager {
                 el.style.outline = '';
             }
         }
+        this.syncEditorMediaPlayback(selectedIds);
         this.renderSelectionOverlay();
+    }
+
+    syncEditorMediaPlayback(selectedIds) {
+        this.canvasPage.querySelectorAll('video, audio').forEach(media => {
+            const element = this.store.getState().elements.find(item => item.id === media.dataset.id);
+            const shouldPlay = selectedIds.includes(media.dataset.id) && element?.attributes?.autoplay !== false;
+            media.muted = element?.attributes?.muted !== false;
+            media.loop = element?.attributes?.loop !== false;
+            if (shouldPlay) {
+                media.preload = 'auto';
+                media.play().catch(() => {});
+            } else {
+                media.pause();
+                media.preload = 'none';
+            }
+        });
     }
 
     bindEvents() {
@@ -323,6 +340,7 @@ class CanvasManager {
         });
         this.renderCanvasAids(state);
         this.renderSelectionOverlay();
+        this.syncEditorMediaPlayback(selectedIds);
         
         this.syncCanvasControls();
         this.canvasPage.style.transformOrigin = 'top left';

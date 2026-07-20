@@ -258,6 +258,16 @@ class PropertiesManager {
                     ]
                 };
             }
+            if (['img', 'video', 'iframe'].includes(element.tag)) {
+                groups['Media'] = {
+                    expanded: true,
+                    properties: [
+                        { key: 'objectFit', label: 'Fit', type: 'select', options: ['cover', 'contain', 'fill', 'none', 'scale-down'], default: 'cover' },
+                        { key: 'objectPosition', label: 'Position', type: 'text', default: 'center center' },
+                        { key: 'aspectRatio', label: 'Aspect Ratio', type: 'text', default: 'auto' }
+                    ]
+                };
+            }
         }
 
         return groups;
@@ -266,8 +276,8 @@ class PropertiesManager {
     getAttributeProperties(element) {
         const common = [{ key: 'attr:title', label: 'Title', type: 'text', default: '' }, { key: 'attr:aria-label', label: 'ARIA Label', type: 'text', default: '' }];
         const byTag = {
-            a: [{ key: 'attr:href', label: 'URL', type: 'text', default: '#' }, { key: 'attr:target', label: 'Target', type: 'select', options: ['_self', '_blank'], default: '_self' }],
-            img: [{ key: 'attr:src', label: 'Source', type: 'text', default: '' }, { key: 'attr:alt', label: 'Alt Text', type: 'text', default: '' }],
+            a: [{ key: 'attr:href', label: 'URL', type: 'text', default: '#' }, { key: 'attr:target', label: 'Target', type: 'select', options: ['_self', '_blank'], default: '_self' }, { key: 'attr:rel', label: 'Relationship', type: 'text', default: 'noopener noreferrer' }, { key: 'attr:download', label: 'Download Filename', type: 'text', default: '' }],
+            img: [{ key: 'attr:src', label: 'Source', type: 'text', default: '' }, { key: 'attr:alt', label: 'Alt Text', type: 'text', default: '' }, { key: 'attr:loading', label: 'Loading', type: 'select', options: ['lazy', 'eager'], default: 'lazy' }, { key: 'attr:decoding', label: 'Decoding', type: 'select', options: ['async', 'sync', 'auto'], default: 'async' }],
             video: [
                 { key: 'attr:src', label: 'Video Source', type: 'text', default: '' }, { key: 'attr:poster', label: 'Poster Image', type: 'text', default: '' },
                 { key: 'videoPlayback', label: 'Playback', type: 'select', options: ['play', 'stop'], default: 'play' },
@@ -275,13 +285,20 @@ class PropertiesManager {
                 { key: 'videoLoop', label: 'Loop', type: 'select', options: ['on', 'off'], default: 'on' },
                 { key: 'videoMuted', label: 'Sound', type: 'select', options: ['muted', 'on'], default: 'muted' }
             ],
-            audio: [{ key: 'attr:src', label: 'Audio Source', type: 'text', default: '' }],
+            audio: [
+                { key: 'attr:src', label: 'Audio Source', type: 'text', default: '' },
+                { key: 'videoPlayback', label: 'Playback', type: 'select', options: ['play', 'stop'], default: 'stop' },
+                { key: 'videoControls', label: 'Player Controls', type: 'select', options: ['hidden', 'visible'], default: 'visible' },
+                { key: 'videoLoop', label: 'Loop', type: 'select', options: ['on', 'off'], default: 'off' },
+                { key: 'videoMuted', label: 'Sound', type: 'select', options: ['muted', 'on'], default: 'on' }
+            ],
             input: [{ key: 'attr:type', label: 'Type', type: 'select', options: ['text', 'email', 'number', 'password', 'checkbox', 'radio', 'date'], default: 'text' }, { key: 'attr:placeholder', label: 'Placeholder', type: 'text', default: '' }],
             button: [{ key: 'attr:type', label: 'Type', type: 'select', options: ['button', 'submit', 'reset'], default: 'button' }],
             iframe: [{ key: 'attr:src', label: 'Embed Source', type: 'text', default: 'about:blank' }]
         };
         const base = common.concat(byTag[element.tag] || []);
         const known = new Set(base.map(p => p.key.slice(5)));
+        if (['video', 'audio'].includes(element.tag)) ['autoplay', 'controls', 'loop', 'muted', 'playsinline', 'preload'].forEach(key => known.add(key));
         const custom = Object.keys(element.attributes || {}).filter(key => !known.has(key) && key !== 'id' && key !== 'class').map(key => ({ key: `attr:${key}`, label: key, type: 'text', default: '' }));
         return base.concat(custom);
     }
@@ -606,7 +623,7 @@ class PropertiesManager {
                 card.appendChild(this.createInteractionSelect('Destination', interaction.value || this.store.getState().pages[0]?.id, this.store.getState().pages.map(page => [page.id, page.name]), value => this.updateInteraction(element, index, { value })));
             } else if (interaction.action === 'animate') {
                 card.appendChild(this.createInteractionSelect('Animation', interaction.value || 'fade-in', [
-                    ['fade-in', 'Fade in'], ['fade-out', 'Fade out'], ['slide-up', 'Slide up'], ['slide-down', 'Slide down'], ['slide-left', 'Slide left'], ['slide-right', 'Slide right'], ['zoom-in', 'Zoom in'], ['zoom-out', 'Zoom out'], ['rotate-in', 'Rotate in'], ['flip-in', 'Flip in'], ['blur-in', 'Blur in'], ['bounce', 'Bounce'], ['shake', 'Shake'], ['pulse', 'Pulse'], ['swing', 'Swing'], ['float', 'Float']
+                    ['fade-in', 'Fade in'], ['fade-out', 'Fade out'], ['slide-up', 'Slide up'], ['slide-down', 'Slide down'], ['slide-left', 'Slide left'], ['slide-right', 'Slide right'], ['zoom-in', 'Zoom in'], ['zoom-out', 'Zoom out'], ['rotate-in', 'Rotate in'], ['flip-in', 'Flip in'], ['blur-in', 'Blur in'], ['reveal-up', 'Reveal up'], ['roll-in', 'Roll in'], ['skew-in', 'Skew in'], ['bounce', 'Bounce'], ['shake', 'Shake'], ['wobble', 'Wobble'], ['pulse', 'Pulse'], ['heartbeat', 'Heartbeat'], ['flash', 'Flash'], ['swing', 'Swing'], ['float', 'Float']
                 ], value => this.updateInteraction(element, index, { value })));
                 card.appendChild(this.createInteractionSelect('Easing', interaction.easing || 'ease', [['ease', 'Smooth'], ['ease-in', 'Ease in'], ['ease-out', 'Ease out'], ['ease-in-out', 'Ease in/out'], ['linear', 'Linear']], value => this.updateInteraction(element, index, { easing: value })));
                 const timing = document.createElement('div');

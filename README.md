@@ -19,7 +19,7 @@ The project is built with plain HTML, CSS, and JavaScript. It has no framework d
 - Multi-page projects with page creation, duplication, renaming, deletion, and navigation actions
 - No-code interactions for clicks, hover, page load, and scroll-into-view events
 - Animation presets with configurable duration, delay, easing, and repetition
-- Sixteen animation presets including slides, zooms, rotate, flip, blur, bounce, pulse, swing, and float
+- Twenty-two animation presets including slides, zooms, rotate, flip, blur, reveal, roll, skew, wobble, heartbeat, swing, and float
 - Accurate, responsive preview that preserves the canvas coordinate system
 - Live HTML, CSS, and JavaScript generation
 - One-file website export with inline HTML, CSS, and JavaScript, plus multi-page ZIP and editable project-file export

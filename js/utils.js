@@ -127,6 +127,12 @@ function getInteractionAnimationCSS() {
 .kts-swing { animation-name: ktsSwing; transform-origin: top center; }
 .kts-float { animation-name: ktsFloat; }
 .kts-blur-in { animation-name: ktsBlurIn; }
+.kts-flash { animation-name: ktsFlash; }
+.kts-heartbeat { animation-name: ktsHeartbeat; }
+.kts-roll-in { animation-name: ktsRollIn; }
+.kts-skew-in { animation-name: ktsSkewIn; }
+.kts-reveal-up { animation-name: ktsRevealUp; }
+.kts-wobble { animation-name: ktsWobble; }
 @keyframes ktsFadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes ktsFadeOut { from { opacity: 1; } to { opacity: 0; } }
 @keyframes ktsSlideUp { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
@@ -143,6 +149,12 @@ function getInteractionAnimationCSS() {
 @keyframes ktsSwing { 20% { transform: rotate(8deg); } 40% { transform: rotate(-6deg); } 60% { transform: rotate(3deg); } 80% { transform: rotate(-2deg); } 100% { transform: none; } }
 @keyframes ktsFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
 @keyframes ktsBlurIn { from { opacity: 0; filter: blur(12px); } to { opacity: 1; filter: blur(0); } }
+@keyframes ktsFlash { 0%,50%,100% { opacity: 1; } 25%,75% { opacity: .2; } }
+@keyframes ktsHeartbeat { 0%,100% { transform: scale(1); } 14%,42% { transform: scale(1.12); } 28%,70% { transform: scale(1); } }
+@keyframes ktsRollIn { from { opacity: 0; transform: translateX(-70px) rotate(-120deg); } to { opacity: 1; transform: none; } }
+@keyframes ktsSkewIn { from { opacity: 0; transform: skewX(-18deg) translateX(-24px); } to { opacity: 1; transform: none; } }
+@keyframes ktsRevealUp { from { opacity: 0; clip-path: inset(100% 0 0 0); transform: translateY(20px); } to { opacity: 1; clip-path: inset(0); transform: none; } }
+@keyframes ktsWobble { 0%,100% { transform: none; } 15% { transform: translateX(-18px) rotate(-4deg); } 30% { transform: translateX(14px) rotate(3deg); } 45% { transform: translateX(-9px) rotate(-2deg); } 60% { transform: translateX(5px) rotate(1deg); } }
 @media (prefers-reduced-motion: reduce) { .kts-animate { animation-duration: .01ms !important; } }`.trim();
 }
 
