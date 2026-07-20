@@ -75,6 +75,7 @@
 .page-manager-controls .page-transition-add { border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-border)); background: color-mix(in srgb, var(--color-accent) 10%, transparent); color: var(--color-accent); font-size: 18px; font-weight: 600; }
 .transition-route { display: grid; grid-template-columns: 1fr 32px 1fr; gap: 8px; align-items: end; }
 .transition-plus { display: grid; place-items: center; height: 38px; color: var(--color-accent); font-size: 22px; font-weight: 600; }
+.page-transition-dialog { width: min(620px, 100%); max-height: calc(100vh - 40px); overflow: auto; }
 
 .canvas-wrapper {
     flex: 1;

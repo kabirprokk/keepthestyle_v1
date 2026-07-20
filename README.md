@@ -17,14 +17,14 @@ The project is built with plain HTML, CSS, and JavaScript. It has no framework d
 - Sixteen open-source Google Font families available directly in the typography inspector
 - Inline text editing directly on the canvas
 - Multi-page projects with page creation, duplication, renaming, deletion, and navigation actions
-- Editable page-to-page transitions with fade, directional slides, zoom, blur, and 3D flip effects
+- Editable page-to-page transitions with independent exit/entrance effects, timing, easing, pause, and movement intensity
 - A dedicated `+` button beside the page selector for creating different transitions between specific page pairs
 - No-code interactions for clicks, hover, page load, and scroll-into-view events
 - Animation presets with configurable duration, delay, easing, and repetition
 - Twenty-two animation presets including slides, zooms, rotate, flip, blur, reveal, roll, skew, wobble, heartbeat, swing, and float
 - First-class animation and transition controls on every element for timing, delay, easing, repeats, direction, fill behavior, and playback state
 - Accurate, responsive preview that preserves the canvas coordinate system
-- Full-bleed background detection that removes preview gutters by fitting canvas-sized images and videos to the browser viewport
+- Full-viewport cover rendering that removes background gutters in both previews and exported websites
 - Live HTML, CSS, and JavaScript generation
 - One-file website export with inline HTML, CSS, and JavaScript, plus multi-page ZIP and editable project-file export
 - International website settings for language codes, automatic/LTR/RTL direction, search descriptions, browser theme color, and social metadata

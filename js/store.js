@@ -595,8 +595,12 @@ class Store {
             fromId: route.fromId,
             toId: route.toId,
             type: transitions.includes(route.type) ? route.type : this.state.pageTransition,
+            exitType: transitions.includes(route.exitType) ? route.exitType : (transitions.includes(route.type) ? route.type : this.state.pageTransition),
+            enterType: transitions.includes(route.enterType) ? route.enterType : (transitions.includes(route.type) ? route.type : this.state.pageTransition),
             duration: Math.min(2000, Math.max(100, Math.round(Number(route.duration) || this.state.pageTransitionDuration))),
-            easing: easings.includes(route.easing) ? route.easing : this.state.pageTransitionEasing
+            easing: easings.includes(route.easing) ? route.easing : this.state.pageTransitionEasing,
+            delay: Math.min(1500, Math.max(0, Math.round(Number(route.delay) || 0))),
+            distance: Math.min(50, Math.max(2, Number(route.distance) || 8))
         })) : [];
     }
 }

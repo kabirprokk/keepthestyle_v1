@@ -90,7 +90,8 @@ class CanvasManager {
         dialog.setAttribute('aria-modal', 'true');
         dialog.setAttribute('aria-labelledby', 'transition-dialog-title');
         const pageOptions = state.pages.map(page => `<option value="${escapeHTML(page.id)}">${escapeHTML(page.name)}</option>`).join('');
-        dialog.innerHTML = `<h2 id="transition-dialog-title">Add page transition</h2><p>Choose how the website moves from one page to another.</p><form class="media-form"><div class="transition-route"><div class="media-field"><label for="transition-from">From</label><select id="transition-from">${pageOptions}</select></div><span class="transition-plus">+</span><div class="media-field"><label for="transition-to">To</label><select id="transition-to">${pageOptions}</select></div></div><div class="settings-grid"><div class="media-field"><label for="route-transition-style">Transition</label><select id="route-transition-style"><option value="fade">Fade</option><option value="slide-left">Slide left</option><option value="slide-right">Slide right</option><option value="slide-up">Slide up</option><option value="zoom">Zoom</option><option value="blur">Blur</option><option value="flip">3D flip</option><option value="none">None</option></select></div><div class="media-field"><label for="route-transition-duration">Duration (ms)</label><input id="route-transition-duration" type="number" min="100" max="2000" step="50" value="${state.pageTransitionDuration || 450}"></div></div><div class="media-field"><label for="route-transition-easing">Easing</label><select id="route-transition-easing"><option value="ease-in-out">Ease in/out</option><option value="ease">Ease</option><option value="ease-in">Ease in</option><option value="ease-out">Ease out</option><option value="linear">Linear</option></select></div><div class="app-dialog-actions"><button type="button" class="btn transition-cancel">Cancel</button><button type="submit" class="btn btn-primary">Add transition</button></div></form>`;
+        const effectOptions = '<option value="fade">Fade</option><option value="slide-left">Slide left</option><option value="slide-right">Slide right</option><option value="slide-up">Slide up</option><option value="zoom">Zoom</option><option value="blur">Blur</option><option value="flip">3D flip</option><option value="none">None</option>';
+        dialog.innerHTML = `<h2 id="transition-dialog-title">Customize page transition</h2><p>Set independent exit and entrance effects for this page route.</p><form class="media-form"><div class="transition-route"><div class="media-field"><label for="transition-from">From</label><select id="transition-from">${pageOptions}</select></div><span class="transition-plus">+</span><div class="media-field"><label for="transition-to">To</label><select id="transition-to">${pageOptions}</select></div></div><div class="settings-grid"><div class="media-field"><label for="route-transition-exit">Exit effect</label><select id="route-transition-exit">${effectOptions}</select></div><div class="media-field"><label for="route-transition-enter">Entrance effect</label><select id="route-transition-enter">${effectOptions}</select></div><div class="media-field"><label for="route-transition-duration">Total duration (ms)</label><input id="route-transition-duration" type="number" min="100" max="2000" step="50" value="${state.pageTransitionDuration || 450}"></div><div class="media-field"><label for="route-transition-delay">Pause between pages (ms)</label><input id="route-transition-delay" type="number" min="0" max="1500" step="50" value="0"></div><div class="media-field"><label for="route-transition-distance">Movement / intensity (%)</label><input id="route-transition-distance" type="number" min="2" max="50" step="1" value="8"></div><div class="media-field"><label for="route-transition-easing">Easing</label><select id="route-transition-easing"><option value="ease-in-out">Ease in/out</option><option value="ease">Ease</option><option value="ease-in">Ease in</option><option value="ease-out">Ease out</option><option value="linear">Linear</option></select></div></div><div class="app-dialog-actions"><button type="button" class="btn transition-cancel">Cancel</button><button type="submit" class="btn btn-primary">Save transition</button></div></form>`;
         backdrop.appendChild(dialog);
         document.body.appendChild(backdrop);
         const from = dialog.querySelector('#transition-from');
@@ -99,9 +100,19 @@ class CanvasManager {
         const syncDestination = () => {
             [...to.options].forEach(option => { option.disabled = option.value === from.value; });
             if (to.value === from.value) to.value = [...to.options].find(option => !option.disabled)?.value || '';
+            const existing = (this.store.getState().pageTransitions || []).find(route => route.fromId === from.value && route.toId === to.value);
+            if (existing) {
+                dialog.querySelector('#route-transition-exit').value = existing.exitType || existing.type || 'fade';
+                dialog.querySelector('#route-transition-enter').value = existing.enterType || existing.type || 'fade';
+                dialog.querySelector('#route-transition-duration').value = existing.duration || 450;
+                dialog.querySelector('#route-transition-delay').value = existing.delay || 0;
+                dialog.querySelector('#route-transition-distance').value = existing.distance || 8;
+                dialog.querySelector('#route-transition-easing').value = existing.easing || 'ease-in-out';
+            }
         };
         syncDestination();
         from.addEventListener('change', syncDestination);
+        to.addEventListener('change', syncDestination);
         const close = () => { document.removeEventListener('keydown', onKeyDown); backdrop.remove(); };
         const onKeyDown = event => { if (event.key === 'Escape') close(); };
         document.addEventListener('keydown', onKeyDown);
@@ -111,9 +122,13 @@ class CanvasManager {
             event.preventDefault();
             const route = {
                 fromId: from.value, toId: to.value,
-                type: dialog.querySelector('#route-transition-style').value,
+                type: dialog.querySelector('#route-transition-enter').value,
+                exitType: dialog.querySelector('#route-transition-exit').value,
+                enterType: dialog.querySelector('#route-transition-enter').value,
                 duration: Math.min(2000, Math.max(100, Number(dialog.querySelector('#route-transition-duration').value) || 450)),
-                easing: dialog.querySelector('#route-transition-easing').value
+                easing: dialog.querySelector('#route-transition-easing').value,
+                delay: Math.min(1500, Math.max(0, Number(dialog.querySelector('#route-transition-delay').value) || 0)),
+                distance: Math.min(50, Math.max(2, Number(dialog.querySelector('#route-transition-distance').value) || 8))
             };
             const routes = (this.store.getState().pageTransitions || []).filter(item => item.fromId !== route.fromId || item.toId !== route.toId);
             this.store.setState({ pageTransitions: [...routes, route] });
