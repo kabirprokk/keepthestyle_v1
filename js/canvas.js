@@ -78,16 +78,15 @@ class CanvasManager {
     }
 
     subscribeToStore() {
-        this.lastElementsJSON = '';
+        this.lastDocumentRevision = -1;
         this.lastPageSizeJSON = '';
         
         this.store.subscribe((state) => {
             this.syncPageControls();
-            const currentElementsJSON = JSON.stringify(state.elements);
             const currentPageSizeJSON = JSON.stringify(state.pageSize);
             
-            if (currentElementsJSON !== this.lastElementsJSON || currentPageSizeJSON !== this.lastPageSizeJSON) {
-                this.lastElementsJSON = currentElementsJSON;
+            if (this.store.documentRevision !== this.lastDocumentRevision || currentPageSizeJSON !== this.lastPageSizeJSON) {
+                this.lastDocumentRevision = this.store.documentRevision;
                 this.lastPageSizeJSON = currentPageSizeJSON;
                 this.renderCanvas();
             } else {
@@ -388,6 +387,12 @@ class CanvasManager {
                     console.warn(`Failed to set attribute ${attr}:`, e);
                 }
             });
+        }
+        if (element.tag === 'video') {
+            el.removeAttribute('autoplay');
+            el.removeAttribute('controls');
+            el.preload = 'none';
+            el.muted = true;
         }
         if (element.hidden) {
             el.classList.add('editor-hidden');

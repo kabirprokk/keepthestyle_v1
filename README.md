@@ -9,6 +9,7 @@ The project is built with plain HTML, CSS, and JavaScript. It has no framework d
 - Drag-and-drop HTML elements, layout blocks, forms, media, shapes, and navigation components
 - Media dialog for URL-based or embedded images, video, audio, YouTube, Vimeo, iframes, and external links
 - Clean autoplay video blocks with optional controls, looping, sound, play/stop settings, posters, and no-code playback actions
+- Optimized large-media editing with lazy canvas video loading, compact undo snapshots, and revision-aware rendering and autosave
 - Precision canvas with zoom, fit-to-screen, resizing, multi-selection, locking, and layer ordering
 - Functional 10px snap-to-grid with page-bound placement and an `Alt` key precision override
 - Real-time property editing for layout, typography, spacing, borders, effects, transforms, and attributes

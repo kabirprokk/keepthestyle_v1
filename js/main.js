@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Cleanup on page unload
 window.addEventListener('beforeunload', function() {
     if (window.store) {
-        window.store.saveToStorage();
+        window.store.saveToStorage(true);
         window.store.destroy();
     }
 });

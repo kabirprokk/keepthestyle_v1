@@ -31,6 +31,10 @@ class Store {
         };
 
         this.listeners = [];
+        this.documentRevision = 0;
+        this.lastPersistedRevision = -1;
+        this.storageSaveTimer = null;
+        this.historyMedia = new Map();
         this.updateHistoryTimer = null;
         this.init();
     }
@@ -56,7 +60,8 @@ class Store {
     }
 
     // Notify all listeners of state change in real-time
-    notify() {
+    notify(documentChanged = true) {
+        if (documentChanged) this.documentRevision++;
         this.listeners.forEach(listener => {
             try {
                 listener(this.state);
@@ -102,7 +107,7 @@ class Store {
         }
         
         // Add current state to history
-        const snapshot = JSON.stringify(this.state.elements);
+        const snapshot = this.createHistorySnapshot();
         if (this.state.history[this.state.historyIndex] === snapshot) return;
         this.state.history.push(snapshot);
         this.state.historyIndex = this.state.history.length - 1;
@@ -115,12 +120,27 @@ class Store {
         this.syncPageHistory();
     }
 
+    createHistorySnapshot() {
+        return JSON.stringify(this.state.elements, (key, value) => {
+            if (typeof value !== 'string' || !value.startsWith('data:') || value.length < 1024) return value;
+            let hash = value.length;
+            for (let index = 0; index < Math.min(value.length, 256); index++) hash = ((hash * 31) ^ value.charCodeAt(index)) >>> 0;
+            const token = `__KTS_MEDIA_${value.length}_${hash}__`;
+            this.historyMedia.set(token, value);
+            return token;
+        });
+    }
+
+    restoreHistorySnapshot(snapshot) {
+        return JSON.parse(snapshot, (key, value) => typeof value === 'string' && this.historyMedia.has(value) ? this.historyMedia.get(value) : value);
+    }
+
     undo() {
         this.flushHistory();
         if (this.state.historyIndex > 0) {
             this.state.historyIndex--;
             const snapshot = this.state.history[this.state.historyIndex];
-            this.state.elements = JSON.parse(snapshot);
+            this.state.elements = this.restoreHistorySnapshot(snapshot);
             this.syncActivePage();
             this.syncPageHistory();
             this.state.lastUpdate = Date.now();
@@ -136,7 +156,7 @@ class Store {
         if (this.state.historyIndex < this.state.history.length - 1) {
             this.state.historyIndex++;
             const snapshot = this.state.history[this.state.historyIndex];
-            this.state.elements = JSON.parse(snapshot);
+            this.state.elements = this.restoreHistorySnapshot(snapshot);
             this.syncActivePage();
             this.syncPageHistory();
             this.state.lastUpdate = Date.now();
@@ -205,18 +225,18 @@ class Store {
     selectElement(id) {
         if (!this.state.selectedElements.includes(id)) {
             this.state.selectedElements.push(id);
-            this.notify();
+            this.notify(false);
         }
     }
 
     deselectElement(id) {
         this.state.selectedElements = this.state.selectedElements.filter(sid => sid !== id);
-        this.notify();
+        this.notify(false);
     }
 
     clearSelection() {
         this.state.selectedElements = [];
-        this.notify();
+        this.notify(false);
     }
 
     duplicateElement(id) {
@@ -412,7 +432,14 @@ class Store {
     }
 
     // Local Storage
-    saveToStorage() {
+    saveToStorage(immediate = false) {
+        clearTimeout(this.storageSaveTimer);
+        if (immediate) return this.persistToStorage();
+        this.storageSaveTimer = setTimeout(() => this.persistToStorage(), 500);
+    }
+
+    persistToStorage() {
+        if (this.lastPersistedRevision === this.documentRevision) return;
         try {
             const data = {
                 elements: this.state.elements,
@@ -424,8 +451,10 @@ class Store {
                 lastUpdate: this.state.lastUpdate
             };
             localStorage.setItem('keepthestyle_project', JSON.stringify(data));
+            this.lastPersistedRevision = this.documentRevision;
         } catch (e) {
             console.warn('Failed to save to localStorage:', e);
+            this.lastPersistedRevision = this.documentRevision;
         }
     }
 
@@ -494,6 +523,7 @@ class Store {
 
     destroy() {
         clearTimeout(this.updateHistoryTimer);
+        clearTimeout(this.storageSaveTimer);
         if (this.autoSaveInterval) {
             clearInterval(this.autoSaveInterval);
         }

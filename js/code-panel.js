@@ -83,8 +83,12 @@ class CodePanel {
     }
 
     subscribe() {
+        this.lastDocumentRevision = this.store.documentRevision;
         this.store.subscribe(() => {
-            this.generateCode();
+            if (this.lastDocumentRevision === this.store.documentRevision) return;
+            this.lastDocumentRevision = this.store.documentRevision;
+            clearTimeout(this.generateTimer);
+            this.generateTimer = setTimeout(() => this.generateCode(), 120);
         });
     }
 
@@ -164,7 +168,10 @@ class CodePanel {
         Object.entries(attributes).forEach(([key, value]) => {
             if (value !== undefined && value !== null && value !== '') {
                 if (/^on/i.test(key) || key === 'style') return;
-                html += ` ${escapeHTML(key)}="${escapeHTML(value)}"`;
+                const renderedValue = typeof value === 'string' && value.startsWith('data:') && value.length > 1024
+                    ? `${value.slice(0, value.indexOf(',') + 1)}[embedded media omitted from live code view]`
+                    : value;
+                html += ` ${escapeHTML(key)}="${escapeHTML(renderedValue)}"`;
             }
         });
         return html;

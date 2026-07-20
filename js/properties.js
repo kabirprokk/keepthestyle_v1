@@ -981,7 +981,13 @@ class PropertiesManager {
         if (key === 'videoControls') return element.attributes?.controls ? 'visible' : 'hidden';
         if (key === 'videoLoop') return element.attributes?.loop === false ? 'off' : 'on';
         if (key === 'videoMuted') return element.attributes?.muted === false ? 'on' : 'muted';
-        if (key.startsWith('attr:')) return (element.attributes || {})[key.slice(5)] ?? fallback;
+        if (key.startsWith('attr:')) {
+            const value = (element.attributes || {})[key.slice(5)] ?? fallback;
+            if (typeof value === 'string' && value.startsWith('data:') && value.length > 1024) {
+                return `[Embedded media · ${(value.length / 1024 / 1024).toFixed(1)} MB · use Add Media to replace]`;
+            }
+            return value;
+        }
         return fallback;
     }
 
