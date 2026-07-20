@@ -413,11 +413,13 @@ body {
         const runtime = generateSiteRuntime(allElements, state.pages, { preview: true });
         return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${escapeHTML(state.projectName)} Preview</title><style>
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,Arial,sans-serif}.kts-preview-page{position:relative;width:${state.pageSize.width}px;height:${state.pageSize.height}px;margin:0 auto;overflow:hidden;background:#fff}${getInteractionAnimationCSS()}
-</style></head><body>
+<title>${escapeHTML(state.projectName)} Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=Montserrat:wght@300;400;500;600;700&family=Oswald:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;font-family:Inter,Arial,sans-serif}.kts-preview-viewport{min-width:100%;min-height:100%;display:flex;overflow:auto}.kts-preview-stage{position:relative;flex:0 0 auto;margin:auto}.kts-preview-page{position:absolute;inset:0 auto auto 0;width:${state.pageSize.width}px;height:${state.pageSize.height}px;overflow:hidden;background:#fff;transform-origin:top left}${getInteractionAnimationCSS()}
+</style></head><body><div class="kts-preview-viewport"><div class="kts-preview-stage">
 ${pages}
-<script>window.__ktsShowPage=function(id){document.querySelectorAll('.kts-preview-page').forEach(page=>page.hidden=page.dataset.pageId!==id);window.scrollTo(0,0)};
+</div></div><script>const ktsPageWidth=${state.pageSize.width};const ktsPageHeight=${state.pageSize.height};function ktsFitPreview(){const scale=Math.min(window.innerWidth/ktsPageWidth,window.innerHeight/ktsPageHeight,1);const stage=document.querySelector('.kts-preview-stage');stage.style.width=(ktsPageWidth*scale)+'px';stage.style.height=(ktsPageHeight*scale)+'px';document.querySelectorAll('.kts-preview-page').forEach(page=>page.style.transform='scale('+scale+')')}window.addEventListener('resize',ktsFitPreview);window.__ktsShowPage=function(id){document.querySelectorAll('.kts-preview-page').forEach(page=>page.hidden=page.dataset.pageId!==id);window.scrollTo(0,0);ktsFitPreview()};ktsFitPreview();
 ${runtime}</script></body></html>`;
     }
 

@@ -259,7 +259,7 @@ class CanvasManager {
         this.canvasPage.style.width = state.pageSize.width + 'px';
         this.canvasPage.style.height = state.pageSize.height + 'px';
         this.canvasPage.style.backgroundColor = '#FFFFFF';
-        this.canvasPage.style.position = 'relative';
+        this.canvasPage.style.position = 'absolute';
         this.canvasPage.classList.toggle('grid-visible', state.gridVisible);
         
         elements.forEach(element => {
