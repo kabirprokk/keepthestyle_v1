@@ -45,6 +45,10 @@ class ToolbarManager {
         this.container.querySelector('[title="Import HTML"]').addEventListener('click', () => {
             this.importHTML();
         });
+
+        this.container.querySelector('[title="Add Media"]').addEventListener('click', () => {
+            this.openMediaDialog();
+        });
         
         // Export
         this.container.querySelector('[title="Export"]').addEventListener('click', () => {
@@ -111,6 +115,109 @@ class ToolbarManager {
             }
         };
         input.click();
+    }
+
+    openMediaDialog() {
+        const backdrop = document.createElement('div');
+        backdrop.className = 'app-dialog-backdrop';
+        const dialog = document.createElement('div');
+        dialog.className = 'app-dialog media-dialog';
+        dialog.setAttribute('role', 'dialog');
+        dialog.setAttribute('aria-modal', 'true');
+        dialog.innerHTML = `
+            <h2>Add media</h2>
+            <p>Add media from a web URL or choose a small local file. Uploaded files are embedded into the project and exported website.</p>
+            <form class="media-form">
+                <div class="media-field"><label for="media-type">Media type</label><select id="media-type"><option value="image">Image</option><option value="video">Video</option><option value="audio">Audio</option><option value="embed">YouTube, Vimeo, or embed</option><option value="link">Media link or button</option></select></div>
+                <div class="media-field"><label for="media-url">Media URL</label><input id="media-url" type="url" placeholder="https://example.com/media.jpg"><span class="media-help">YouTube and Vimeo links are converted to embeds automatically.</span></div>
+                <div class="media-field media-file-field"><label for="media-file">Or choose a local file</label><input id="media-file" type="file" accept="image/*"><span class="media-help">Maximum 4 MB. URLs are recommended for larger videos.</span></div>
+                <div class="media-field media-label-field" hidden><label for="media-label">Link text</label><input id="media-label" type="text" maxlength="120" value="Open media"></div>
+                <div class="app-dialog-actions"><button type="button" class="btn media-cancel">Cancel</button><button type="submit" class="btn btn-primary">Add to canvas</button></div>
+            </form>`;
+        backdrop.appendChild(dialog);
+        document.body.appendChild(backdrop);
+        const form = dialog.querySelector('form');
+        const type = dialog.querySelector('#media-type');
+        const url = dialog.querySelector('#media-url');
+        const file = dialog.querySelector('#media-file');
+        const label = dialog.querySelector('#media-label');
+        const onKeyDown = event => { if (event.key === 'Escape') close(); };
+        const close = () => { document.removeEventListener('keydown', onKeyDown); backdrop.remove(); };
+        const syncFields = () => {
+            const accepts = { image: 'image/*', video: 'video/*', audio: 'audio/*' };
+            const supportsFile = Object.hasOwn(accepts, type.value);
+            dialog.querySelector('.media-file-field').hidden = !supportsFile;
+            dialog.querySelector('.media-label-field').hidden = type.value !== 'link';
+            file.accept = accepts[type.value] || '';
+            url.placeholder = type.value === 'embed' ? 'https://youtube.com/watch?v=...' : type.value === 'link' ? 'https://example.com' : `https://example.com/media.${type.value === 'image' ? 'jpg' : type.value === 'video' ? 'mp4' : 'mp3'}`;
+        };
+        type.addEventListener('change', syncFields);
+        dialog.querySelector('.media-cancel').addEventListener('click', close);
+        backdrop.addEventListener('mousedown', event => { if (event.target === backdrop) close(); });
+        document.addEventListener('keydown', onKeyDown);
+        form.addEventListener('submit', async event => {
+            event.preventDefault();
+            try {
+                let source = url.value.trim();
+                if (file.files[0]) source = await this.readMediaFile(file.files[0], type.value);
+                if (!source) throw new Error('Choose a file or enter a media URL');
+                this.addMediaElement(type.value, source, label.value.trim());
+                close();
+                this.showNotification('Media added to canvas');
+            } catch (error) {
+                showToast(error.message || 'Unable to add media', 'error');
+            }
+        });
+        syncFields();
+        url.focus();
+    }
+
+    readMediaFile(file, type) {
+        const expected = { image: 'image/', video: 'video/', audio: 'audio/' }[type];
+        if (!expected || !file.type.startsWith(expected)) return Promise.reject(new Error(`Choose a valid ${type} file`));
+        if (file.size > 4 * 1024 * 1024) return Promise.reject(new Error('Local media must be 4 MB or smaller. Use a URL for larger files.'));
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error('Unable to read the selected file'));
+            reader.readAsDataURL(file);
+        });
+    }
+
+    addMediaElement(type, source, label = '') {
+        if (/^\s*javascript:/i.test(source)) throw new Error('This URL type is not allowed');
+        const page = this.store.getState().pageSize;
+        const presets = {
+            image: { tag: 'img', width: 480, height: 320, attributes: { src: source, alt: label || 'Image', loading: 'lazy' }, styles: { objectFit: 'contain' } },
+            video: { tag: 'video', width: 640, height: 360, attributes: { src: source, controls: true, preload: 'metadata' }, styles: { objectFit: 'contain', backgroundColor: '#000000' } },
+            audio: { tag: 'audio', width: 480, height: 54, attributes: { src: source, controls: true, preload: 'metadata' }, styles: {} },
+            embed: { tag: 'iframe', width: 640, height: 360, attributes: { src: this.normalizeEmbedUrl(source), title: label || 'Embedded media', loading: 'lazy', allowfullscreen: true, allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture' }, styles: { border: '0' } },
+            link: { tag: 'a', width: 220, height: 48, attributes: { href: source, target: '_blank', rel: 'noopener noreferrer' }, content: label || 'Open media', styles: { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 18px', borderRadius: '8px', backgroundColor: '#4D6BFF', color: '#FFFFFF', textDecoration: 'none', fontWeight: '600' } }
+        };
+        const preset = presets[type];
+        if (!preset) throw new Error('Unsupported media type');
+        this.store.addElement({
+            tag: preset.tag,
+            name: type === 'embed' ? 'Media Embed' : `${type[0].toUpperCase()}${type.slice(1)}`,
+            position: { x: Math.max(0, (page.width - preset.width) / 2), y: Math.max(0, (page.height - preset.height) / 2) },
+            size: { width: Math.min(preset.width, page.width), height: Math.min(preset.height, page.height) },
+            styles: preset.styles,
+            content: preset.content || '',
+            attributes: preset.attributes
+        });
+    }
+
+    normalizeEmbedUrl(value) {
+        const url = new URL(value, window.location.href);
+        if (!['http:', 'https:'].includes(url.protocol)) throw new Error('Embed URLs must use HTTP or HTTPS');
+        if (url.hostname === 'youtu.be') return `https://www.youtube.com/embed/${encodeURIComponent(url.pathname.slice(1))}`;
+        if (url.hostname.endsWith('youtube.com')) {
+            if (url.pathname.startsWith('/embed/')) return url.href;
+            const id = url.searchParams.get('v') || (url.pathname.startsWith('/shorts/') ? url.pathname.split('/')[2] : '');
+            if (id) return `https://www.youtube.com/embed/${encodeURIComponent(id)}`;
+        }
+        if (url.hostname.endsWith('vimeo.com') && /^\/\d+/.test(url.pathname)) return `https://player.vimeo.com/video/${url.pathname.split('/')[1]}`;
+        return url.href;
     }
 
     saveProject() {

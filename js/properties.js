@@ -268,9 +268,11 @@ class PropertiesManager {
         const byTag = {
             a: [{ key: 'attr:href', label: 'URL', type: 'text', default: '#' }, { key: 'attr:target', label: 'Target', type: 'select', options: ['_self', '_blank'], default: '_self' }],
             img: [{ key: 'attr:src', label: 'Source', type: 'text', default: '' }, { key: 'attr:alt', label: 'Alt Text', type: 'text', default: '' }],
+            video: [{ key: 'attr:src', label: 'Video Source', type: 'text', default: '' }, { key: 'attr:poster', label: 'Poster Image', type: 'text', default: '' }],
+            audio: [{ key: 'attr:src', label: 'Audio Source', type: 'text', default: '' }],
             input: [{ key: 'attr:type', label: 'Type', type: 'select', options: ['text', 'email', 'number', 'password', 'checkbox', 'radio', 'date'], default: 'text' }, { key: 'attr:placeholder', label: 'Placeholder', type: 'text', default: '' }],
             button: [{ key: 'attr:type', label: 'Type', type: 'select', options: ['button', 'submit', 'reset'], default: 'button' }],
-            iframe: [{ key: 'attr:src', label: 'Source', type: 'text', default: 'about:blank' }]
+            iframe: [{ key: 'attr:src', label: 'Embed Source', type: 'text', default: 'about:blank' }]
         };
         const base = common.concat(byTag[element.tag] || []);
         const known = new Set(base.map(p => p.key.slice(5)));
