@@ -9,6 +9,9 @@ class SidebarManager {
         this.nav = container.querySelector('.sidebar-nav');
         this.elementsList = container.querySelector('.sidebar-elements');
         this.searchInput = container.querySelector('.sidebar-search input');
+        this.layersList = container.querySelector('.sidebar-layers');
+        this.tabs = container.querySelectorAll('[data-sidebar-view]');
+        this.currentView = 'insert';
         
         this.categories = window.getCategoriesWithElements();
         this.currentCategory = Object.keys(this.categories)[0];
@@ -20,6 +23,7 @@ class SidebarManager {
         this.renderCategories();
         this.renderElements();
         this.bindEvents();
+        window.store.subscribe(() => { if (this.currentView === 'layers') this.renderLayers(); });
     }
 
     renderCategories() {
@@ -120,5 +124,66 @@ class SidebarManager {
             const query = e.target.value.toLowerCase();
             this.renderElements(query);
         });
+        this.tabs.forEach(tab => tab.addEventListener('click', () => this.setView(tab.dataset.sidebarView)));
+    }
+
+    setView(view) {
+        this.currentView = view;
+        this.tabs.forEach(tab => tab.classList.toggle('active', tab.dataset.sidebarView === view));
+        const showLayers = view === 'layers';
+        this.container.querySelector('.sidebar-search').hidden = showLayers;
+        this.nav.hidden = showLayers;
+        this.elementsList.hidden = showLayers;
+        this.layersList.hidden = !showLayers;
+        if (showLayers) this.renderLayers();
+    }
+
+    renderLayers() {
+        const state = window.store.getState();
+        this.layersList.innerHTML = '';
+        [...state.elements].reverse().forEach(element => {
+            const row = document.createElement('div');
+            row.className = 'layer-item';
+            row.classList.toggle('selected', state.selectedElements.includes(element.id));
+            row.classList.toggle('is-hidden', !!element.hidden);
+            row.classList.toggle('is-locked', !!element.locked);
+            row.innerHTML = `<span class="layer-type">${escapeHTML((element.tag || 'div').slice(0, 3).toUpperCase())}</span><span class="layer-name">${escapeHTML(element.name || element.tag || 'Element')}</span>`;
+            const actions = document.createElement('span');
+            actions.className = 'layer-actions';
+            const controls = [
+                ['visibility', element.hidden ? 'Show layer' : 'Hide layer', element.hidden ? '○' : '●'],
+                ['lock', element.locked ? 'Unlock layer' : 'Lock layer', element.locked ? 'L' : 'U'],
+                ['up', 'Bring forward', '↑'], ['down', 'Send backward', '↓']
+            ];
+            controls.forEach(([action, title, text]) => {
+                const button = document.createElement('button');
+                button.dataset.layerAction = action; button.title = title; button.textContent = text;
+                button.addEventListener('click', event => { event.stopPropagation(); this.runLayerAction(element, action); });
+                actions.appendChild(button);
+            });
+            row.appendChild(actions);
+            row.addEventListener('click', event => {
+                if (!event.shiftKey) window.store.clearSelection();
+                if (event.shiftKey && state.selectedElements.includes(element.id)) window.store.deselectElement(element.id);
+                else window.store.selectElement(element.id);
+            });
+            row.addEventListener('dblclick', () => {
+                const name = window.prompt('Layer name', element.name || element.tag || 'Element');
+                if (name?.trim()) window.store.updateElement(element.id, { name: name.trim() });
+            });
+            this.layersList.appendChild(row);
+        });
+        if (!state.elements.length) this.layersList.innerHTML = '<div class="sidebar-empty"><strong>No layers yet</strong><span>Add an element to start designing.</span></div>';
+    }
+
+    runLayerAction(element, action) {
+        if (action === 'lock') window.store.updateElement(element.id, { locked: !element.locked });
+        if (action === 'visibility') {
+            const styles = { ...element.styles };
+            if (!element.hidden) styles.visibility = 'hidden'; else if (styles.visibility === 'hidden') delete styles.visibility;
+            window.store.updateElement(element.id, { hidden: !element.hidden, styles });
+        }
+        if (action === 'up') window.store.reorderElement(element.id, 'forward');
+        if (action === 'down') window.store.reorderElement(element.id, 'backward');
     }
 }

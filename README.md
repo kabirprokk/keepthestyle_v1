@@ -11,6 +11,7 @@ The project is built with plain HTML, CSS, and JavaScript. It has no framework d
 - Clean autoplay video blocks with optional controls, looping, sound, play/stop settings, posters, and no-code playback actions
 - Optimized large-media editing with lazy canvas video loading, compact undo snapshots, and revision-aware rendering and autosave
 - Precision canvas with zoom, fit-to-screen, resizing, multi-selection, locking, and layer ordering
+- Designer-style Layers workspace with live selection, renaming, visibility, locking, and front-to-back reordering
 - Functional 10px snap-to-grid with page-bound placement and an `Alt` key precision override
 - Real-time property editing for layout, typography, spacing, borders, effects, transforms, and attributes
 - Sixteen open-source Google Font families available directly in the typography inspector
