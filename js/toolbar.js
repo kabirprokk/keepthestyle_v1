@@ -433,10 +433,14 @@ ${runtime}</script></body></html>`;
     async openSettings() {
         const state = this.store.getState();
         const action = await showChoiceDialog('Workspace settings', `Theme: ${this.isDarkMode ? 'Dark' : 'Light'}\nAuto-save: Enabled\nGrid: ${state.gridVisible ? 'Visible' : 'Hidden'}\nSnap: ${state.snapEnabled ? 'Enabled' : 'Disabled'}`, [
-            { label: 'Toggle theme', value: 'theme', primary: true }, { label: state.gridVisible ? 'Hide grid' : 'Show grid', value: 'grid' }, { label: 'Close', value: null }
+            { label: state.snapEnabled ? 'Disable snap' : 'Enable snap', value: 'snap', primary: true }, { label: 'Toggle theme', value: 'theme' }, { label: state.gridVisible ? 'Hide grid' : 'Show grid', value: 'grid' }, { label: 'Close', value: null }
         ]);
         if (action === 'theme') this.toggleDarkMode();
         if (action === 'grid') this.store.setState({ gridVisible: !state.gridVisible });
+        if (action === 'snap') {
+            this.store.setState({ snapEnabled: !state.snapEnabled });
+            this.showNotification(`Snap to grid ${state.snapEnabled ? 'disabled' : 'enabled'}`);
+        }
     }
 
     updateUI() {

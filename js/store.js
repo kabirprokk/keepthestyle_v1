@@ -414,6 +414,7 @@ class Store {
                 activePageId: this.state.activePageId,
                 projectName: this.state.projectName,
                 pageSize: this.state.pageSize,
+                snapEnabled: this.state.snapEnabled,
                 lastUpdate: this.state.lastUpdate
             };
             localStorage.setItem('keepthestyle_project', JSON.stringify(data));
@@ -433,6 +434,7 @@ class Store {
                 this.state.hasLoadedProject = true;
                 this.state.projectName = parsed.projectName || 'Untitled Project';
                 this.state.pageSize = parsed.pageSize || { width: 1920, height: 1080 };
+                this.state.snapEnabled = parsed.snapEnabled !== false;
                 this.saveHistory();
             }
         } catch (e) {
@@ -448,6 +450,7 @@ class Store {
             activePageId: this.state.activePageId,
             projectName: this.state.projectName,
             pageSize: this.state.pageSize,
+            snapEnabled: this.state.snapEnabled,
             version: '2.0.0'
         };
     }
@@ -470,6 +473,7 @@ class Store {
             this.state.selectedElements = [];
             this.state.projectName = data.projectName || 'Imported Project';
             this.state.pageSize = data.pageSize || { width: 1920, height: 1080 };
+            this.state.snapEnabled = data.snapEnabled !== false;
             this.state.history = [];
             this.state.historyIndex = -1;
             this.saveHistory();

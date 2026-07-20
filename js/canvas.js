@@ -476,10 +476,22 @@ class CanvasManager {
             if (dir.includes('w')) x = action.position.x + action.size.width - width;
             if (dir.includes('n')) y = action.position.y + action.size.height - height;
         }
+        const pageSize = this.store.getState().pageSize;
+        if (this.store.getState().snapEnabled && !event.altKey && !event.shiftKey) {
+            const snap = value => Math.round(value / 10) * 10;
+            const right = x + width;
+            const bottom = y + height;
+            if (dir.includes('w')) { x = snap(x); width = right - x; }
+            if (dir.includes('n')) { y = snap(y); height = bottom - y; }
+            if (dir.includes('e')) width = snap(width);
+            if (dir.includes('s')) height = snap(height);
+        }
         width = Math.max(16, Math.round(width));
         height = Math.max(16, Math.round(height));
-        x = Math.max(0, Math.round(x));
-        y = Math.max(0, Math.round(y));
+        x = Math.max(0, Math.min(Math.round(x), pageSize.width - 16));
+        y = Math.max(0, Math.min(Math.round(y), pageSize.height - 16));
+        width = Math.min(width, pageSize.width - x);
+        height = Math.min(height, pageSize.height - y);
         const node = this.canvasPage.querySelector(`[data-id="${action.id}"]`);
         const overlay = this.canvasPage.querySelector('.selection-overlay');
         [node, overlay].forEach(target => { if (target) { target.style.left = `${x}px`; target.style.top = `${y}px`; target.style.width = `${width}px`; target.style.height = `${height}px`; } });
@@ -571,13 +583,34 @@ document.addEventListener('mousemove', (e) => {
     
     const manager = window.canvasManager;
     const pageRect = manager.canvasPage.getBoundingClientRect();
-    const x = (e.clientX - pageRect.left - manager.dragOffset.x) / manager.zoomLevel;
-    const y = (e.clientY - pageRect.top - manager.dragOffset.y) / manager.zoomLevel;
+    let x = (e.clientX - pageRect.left - manager.dragOffset.x) / manager.zoomLevel;
+    let y = (e.clientY - pageRect.top - manager.dragOffset.y) / manager.zoomLevel;
     
     const primary = manager.dragGroup?.find(item => item.id === manager.dragTarget.dataset.id);
-    const dx = x - (primary?.position.x || 0);
-    const dy = y - (primary?.position.y || 0);
-    (manager.dragGroup || []).forEach(item => {
+    const state = manager.store.getState();
+    if (state.snapEnabled && !e.altKey) {
+        x = Math.round(x / 10) * 10;
+        y = Math.round(y / 10) * 10;
+    }
+    let dx = x - (primary?.position.x || 0);
+    let dy = y - (primary?.position.y || 0);
+    const group = manager.dragGroup || [];
+    if (group.length) {
+        const getElement = id => state.elements.find(element => element.id === id);
+        const minDx = Math.max(...group.map(item => -item.position.x));
+        const minDy = Math.max(...group.map(item => -item.position.y));
+        const maxDx = Math.min(...group.map(item => {
+            const element = getElement(item.id);
+            return state.pageSize.width - item.position.x - (element?.size?.width || 1);
+        }));
+        const maxDy = Math.min(...group.map(item => {
+            const element = getElement(item.id);
+            return state.pageSize.height - item.position.y - (element?.size?.height || 1);
+        }));
+        dx = Math.max(minDx, Math.min(dx, maxDx));
+        dy = Math.max(minDy, Math.min(dy, maxDy));
+    }
+    group.forEach(item => {
         const node = manager.canvasPage.querySelector(`[data-id="${item.id}"]`);
         if (!node) return;
         node.style.left = Math.max(0, item.position.x + dx) + 'px';
