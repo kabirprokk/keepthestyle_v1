@@ -404,11 +404,16 @@ class ToolbarManager {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="${escapeHTML(state.siteDescription || '')}">
+    <meta name="keywords" content="${escapeHTML(state.siteKeywords || '')}">
     <meta name="theme-color" content="${escapeHTML(state.themeColor || '#4d6bff')}">
     <meta name="generator" content="KeepTheStyle">
     <meta property="og:type" content="website">
     <meta property="og:title" content="${escapeHTML(state.projectName)}">
     <meta property="og:description" content="${escapeHTML(state.siteDescription || '')}">
+    ${state.canonicalUrl ? `<link rel="canonical" href="${escapeHTML(state.canonicalUrl)}">` : ''}
+    ${state.socialImage ? `<meta property="og:image" content="${escapeHTML(state.socialImage)}">\n    <meta name="twitter:card" content="summary_large_image">\n    <meta name="twitter:image" content="${escapeHTML(state.socialImage)}">` : '<meta name="twitter:card" content="summary">'}
+    <meta name="twitter:title" content="${escapeHTML(state.projectName)}">
+    <meta name="twitter:description" content="${escapeHTML(state.siteDescription || '')}">
     <title>${escapeHTML(state.projectName)}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -459,6 +464,9 @@ class ToolbarManager {
         const styleAttr = styles ? ` style="${styles.trim()}"` : '';
         const attributes = { ...(element.attributes || {}) };
         attributes.id = safeDomId(attributes.id || element.id);
+        if (tag === 'img') { attributes.loading ||= 'lazy'; attributes.decoding ||= 'async'; }
+        if (tag === 'iframe') attributes.loading ||= 'lazy';
+        if (tag === 'video') { attributes.preload ||= 'metadata'; attributes.playsinline = true; }
         if (element.hidden) attributes.hidden = true;
         if (attributes.target === '_blank') attributes.rel = 'noopener noreferrer';
         const attrs = this.renderAttributes(attributes);
@@ -591,7 +599,7 @@ body {
         const transitionRuntime = generatePageTransitionRuntime(state, { preview: true, currentPageId: state.activePageId });
         return `<!DOCTYPE html>
 <html lang="${escapeHTML(language)}" dir="${direction}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="${escapeHTML(state.siteDescription || '')}"><meta name="theme-color" content="${escapeHTML(state.themeColor || '#4d6bff')}"><meta name="generator" content="KeepTheStyle"><meta property="og:title" content="${escapeHTML(state.projectName)}"><meta property="og:description" content="${escapeHTML(state.siteDescription || '')}">
+<meta name="description" content="${escapeHTML(state.siteDescription || '')}"><meta name="keywords" content="${escapeHTML(state.siteKeywords || '')}"><meta name="theme-color" content="${escapeHTML(state.themeColor || '#4d6bff')}"><meta name="generator" content="KeepTheStyle"><meta property="og:title" content="${escapeHTML(state.projectName)}"><meta property="og:description" content="${escapeHTML(state.siteDescription || '')}">${state.canonicalUrl ? `<link rel="canonical" href="${escapeHTML(state.canonicalUrl)}">` : ''}${state.socialImage ? `<meta property="og:image" content="${escapeHTML(state.socialImage)}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${escapeHTML(state.socialImage)}">` : '<meta name="twitter:card" content="summary">'}
 <title>${escapeHTML(state.projectName)}${options.download ? '' : ' Preview'}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&family=Lora:wght@400;500;600;700&family=Merriweather:wght@300;400;700&family=Montserrat:wght@300;400;500;600;700&family=Nunito:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;500;600;700&family=Oswald:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&family=Raleway:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&family=Rubik:wght@300;400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -629,6 +637,8 @@ ${runtime}</script></body></html>`;
                     <div class="media-field"><label for="text-direction">Text direction</label><select id="text-direction"><option value="auto">Automatic</option><option value="ltr">Left to right</option><option value="rtl">Right to left</option></select></div>
                 </div>
                 <div class="media-field"><label for="site-description">Search description</label><textarea id="site-description" maxlength="300" rows="3" placeholder="A concise description of this website">${escapeHTML(state.siteDescription || '')}</textarea><span class="media-help"><span class="description-count">${String(state.siteDescription || '').length}</span>/300 characters</span></div>
+                <div class="media-field"><label for="site-keywords">Search keywords</label><input id="site-keywords" maxlength="300" value="${escapeHTML(state.siteKeywords || '')}" placeholder="portfolio, designer, studio"></div>
+                <div class="settings-grid"><div class="media-field"><label for="canonical-url">Canonical URL</label><input id="canonical-url" type="url" value="${escapeHTML(state.canonicalUrl || '')}" placeholder="https://example.com/"></div><div class="media-field"><label for="social-image">Social share image URL</label><input id="social-image" type="url" value="${escapeHTML(state.socialImage || '')}" placeholder="https://example.com/share.jpg"></div></div>
                 <div class="media-field color-field"><label for="theme-color">Browser theme color</label><input id="theme-color" type="color" value="${escapeHTML(state.themeColor || '#4d6bff')}"><output>${escapeHTML(state.themeColor || '#4d6bff')}</output></div>
                 <fieldset class="settings-toggles transition-settings"><legend>Page transitions</legend><div class="media-field"><label for="page-transition">Style</label><select id="page-transition"><option value="none">None</option><option value="fade">Fade</option><option value="slide-left">Slide left</option><option value="slide-right">Slide right</option><option value="slide-up">Slide up</option><option value="zoom">Zoom</option><option value="blur">Blur</option><option value="flip">3D flip</option></select></div><div class="media-field"><label for="page-transition-duration">Duration (ms)</label><input id="page-transition-duration" type="number" min="100" max="2000" step="50" value="${Number(state.pageTransitionDuration) || 450}"></div><div class="media-field"><label for="page-transition-easing">Easing</label><select id="page-transition-easing"><option value="linear">Linear</option><option value="ease">Ease</option><option value="ease-in">Ease in</option><option value="ease-out">Ease out</option><option value="ease-in-out">Ease in/out</option></select></div></fieldset>
                 <fieldset class="settings-toggles"><legend>Workspace</legend><label><input id="setting-grid" type="checkbox"${state.gridVisible ? ' checked' : ''}> Show grid</label><label><input id="setting-snap" type="checkbox"${state.snapEnabled ? ' checked' : ''}> Snap to grid</label><label><input id="setting-dark" type="checkbox"${this.isDarkMode ? ' checked' : ''}> Dark mode</label></fieldset>
@@ -665,6 +675,9 @@ ${runtime}</script></body></html>`;
                 siteLanguage: languageCode,
                 textDirection: direction.value,
                 siteDescription: description.value.trim(),
+                siteKeywords: dialog.querySelector('#site-keywords').value.trim(),
+                canonicalUrl: dialog.querySelector('#canonical-url').value.trim(),
+                socialImage: dialog.querySelector('#social-image').value.trim(),
                 themeColor: color.value,
                 pageTransition: dialog.querySelector('#page-transition').value,
                 pageTransitionDuration: Math.min(2000, Math.max(100, Number(dialog.querySelector('#page-transition-duration').value) || 450)),

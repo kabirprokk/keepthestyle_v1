@@ -2,6 +2,8 @@
 
 KeepTheStyle is a browser-based, visual website builder for creating multi-page websites without writing code. It combines a precision design canvas, a professional property inspector, no-code interactions, live source generation, and production-ready website export in one lightweight application.
 
+See [FEATURES.md](FEATURES.md) for the implemented capability matrix and architecture-aware roadmap.
+
 The project is built with plain HTML, CSS, and JavaScript. It has no framework dependency, package installation, compilation step, or backend requirement.
 
 ## Highlights
@@ -11,6 +13,7 @@ The project is built with plain HTML, CSS, and JavaScript. It has no framework d
 - Clean autoplay video blocks with optional controls, looping, sound, play/stop settings, posters, and no-code playback actions
 - Optimized large-media editing with lazy canvas video loading, compact undo snapshots, and revision-aware rendering and autosave
 - Precision canvas with zoom, fit-to-screen, resizing, multi-selection, locking, and layer ordering
+- Logical Group/Ungroup with grouped selection and movement, plus 10%–800% manual zoom
 - Designer-style Layers workspace with live selection, renaming, visibility, locking, and front-to-back reordering
 - Functional 10px snap-to-grid with page-bound placement and an `Alt` key precision override
 - Real-time property editing for layout, typography, spacing, borders, effects, transforms, and attributes
@@ -29,6 +32,7 @@ The project is built with plain HTML, CSS, and JavaScript. It has no framework d
 - One-file website export with inline HTML, CSS, and JavaScript, plus multi-page ZIP and editable project-file export
 - International website settings for language codes, automatic/LTR/RTL direction, search descriptions, browser theme color, and social metadata
 - HTML import and portable `.ktstyle` project files
+- Expanded SEO controls for keywords, canonical URLs, Open Graph images, and Twitter cards
 - Automatic browser storage, undo/redo history, keyboard shortcuts, and light/dark themes
 
 ## Getting started

@@ -98,6 +98,19 @@ const ELEMENTS_CATEGORIES = {
             { name: 'Breadcrumb', tag: 'nav', icon: '›' },
             { name: 'Pagination', tag: 'nav', icon: '⋯' },
         ]
+    },
+    'Advanced UI': {
+        icon: '⚡',
+        elements: [
+            { name: 'Divider', tag: 'hr', icon: '━', size: { width: 320, height: 2 }, styles: { border: '0', backgroundColor: '#D8DCE5', padding: '0' } },
+            { name: 'Card', tag: 'article', icon: '▣', size: { width: 360, height: 240 }, styles: { backgroundColor: '#FFFFFF', border: '1px solid #E4E7EC', borderRadius: '16px', padding: '24px', boxShadow: '0 12px 32px rgba(16,24,40,.12)' }, content: 'Card content' },
+            { name: 'Two Columns', tag: 'section', icon: '▥', size: { width: 720, height: 300 }, styles: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', padding: '24px', backgroundColor: '#FFFFFF' }, content: 'Two-column section' },
+            { name: 'Range Slider', tag: 'input', icon: '◉', size: { width: 280, height: 32 }, attributes: { type: 'range', min: '0', max: '100', value: '50', 'aria-label': 'Range slider' } },
+            { name: 'Progress Bar', tag: 'progress', icon: '▰', size: { width: 280, height: 24 }, attributes: { max: '100', value: '65', 'aria-label': 'Progress' } },
+            { name: 'Toggle Switch', tag: 'input', icon: '◐', size: { width: 48, height: 26 }, attributes: { type: 'checkbox', role: 'switch', 'aria-label': 'Toggle' } },
+            { name: 'Quote', tag: 'blockquote', icon: '❝', size: { width: 420, height: 140 }, styles: { fontSize: '24px', fontStyle: 'italic', lineHeight: '1.5', padding: '24px', borderLeft: '4px solid #4D6BFF' }, content: 'Add an inspiring quote.' },
+            { name: 'Code Block', tag: 'pre', icon: '</>', size: { width: 480, height: 220 }, styles: { backgroundColor: '#111827', color: '#E5E7EB', fontFamily: 'JetBrains Mono', padding: '20px', borderRadius: '12px', overflow: 'auto' }, content: 'const message = "Hello world";' }
+        ]
     }
 };
 
@@ -221,7 +234,7 @@ function getAllElements() {
                     size: el.size || { width: 200, height: 150 },
                     styles: { ...getElementDefaults(normalizedTag).styles, ...(el.styles || {}) },
                     content: el.content !== undefined ? el.content : getElementDefaults(normalizedTag).content,
-                    attributes: { ...getElementDefaults(normalizedTag).attributes, ...(el.name === 'Checkbox' ? { type: 'checkbox' } : {}), ...(el.name === 'Radio' ? { type: 'radio' } : {}) }
+                    attributes: { ...getElementDefaults(normalizedTag).attributes, ...(el.attributes || {}), ...(el.name === 'Checkbox' ? { type: 'checkbox' } : {}), ...(el.name === 'Radio' ? { type: 'radio' } : {}) }
                 }
             });
         });
@@ -245,6 +258,7 @@ function getCategoriesWithElements() {
                     content: el.content !== undefined ? el.content : getElementDefaults(el.tag.startsWith('input[') ? 'input' : el.tag).content,
                     attributes: {
                         ...getElementDefaults(el.tag.startsWith('input[') ? 'input' : el.tag).attributes,
+                        ...(el.attributes || {}),
                         ...(el.name === 'Checkbox' ? { type: 'checkbox' } : {}),
                         ...(el.name === 'Radio' ? { type: 'radio' } : {})
                     }

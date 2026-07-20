@@ -327,7 +327,7 @@ class CanvasManager {
     }
 
     setZoom(value, anchor = null) {
-        const nextZoom = Math.max(0.1, Math.min(Number(value) || 1, 3));
+        const nextZoom = Math.max(0.1, Math.min(Number(value) || 1, 8));
         const wrapperRect = this.canvasWrapper.getBoundingClientRect();
         const anchorX = anchor ? anchor.x - wrapperRect.left : this.canvasWrapper.clientWidth / 2;
         const anchorY = anchor ? anchor.y - wrapperRect.top : this.canvasWrapper.clientHeight / 2;
@@ -502,7 +502,8 @@ class CanvasManager {
             } else {
                 if (!this.store.getState().selectedElements.includes(element.id)) {
                     this.store.clearSelection();
-                    this.store.selectElement(element.id);
+                    const grouped = element.groupId ? this.store.getState().elements.filter(item => item.groupId === element.groupId) : [element];
+                    this.store.selectElements(grouped.map(item => item.id));
                 }
             }
             
@@ -534,8 +535,8 @@ class CanvasManager {
             e.preventDefault();
             e.stopPropagation();
             if (!this.store.getState().selectedElements.includes(element.id)) {
-                this.store.clearSelection();
-                this.store.selectElement(element.id);
+                const grouped = element.groupId ? this.store.getState().elements.filter(item => item.groupId === element.groupId) : [element];
+                this.store.selectElements(grouped.map(item => item.id));
             }
             this.openContextMenu(e.clientX, e.clientY, element.id);
         });
@@ -678,17 +679,20 @@ class CanvasManager {
         menu.className = 'canvas-context-menu';
         const actions = [
             ['edit', 'Edit text', 'Double-click'], ['duplicate', 'Duplicate', 'Ctrl+D'],
+            ['group', 'Group selection', 'Ctrl+G'], ['ungroup', 'Ungroup', 'Ctrl+Shift+G'],
             ['front', 'Bring to front', ''], ['forward', 'Bring forward', ''],
             ['backward', 'Send backward', ''], ['back', 'Send to back', ''],
             ['lock', element.locked ? 'Unlock' : 'Lock', ''], ['visibility', element.hidden ? 'Show' : 'Hide', ''],
             ['delete', 'Delete', 'Delete']
         ];
         actions.forEach(([action, label, shortcut], index) => {
-            if ([2, 6, 8].includes(index)) menu.appendChild(document.createElement('div')).className = 'context-divider';
+            if ([2, 4, 8, 10].includes(index)) menu.appendChild(document.createElement('div')).className = 'context-divider';
             const button = document.createElement('button');
             button.innerHTML = `<span>${label}</span><kbd>${shortcut}</kbd>`;
             button.className = action === 'delete' ? 'danger' : '';
             if (action === 'edit' && !['div','span','p','h1','h2','h3','h4','button','a','label'].includes(element.tag)) button.disabled = true;
+            if (action === 'group' && this.store.getState().selectedElements.length < 2) button.disabled = true;
+            if (action === 'ungroup' && !element.groupId) button.disabled = true;
             button.addEventListener('click', () => { this.runContextAction(action, id); this.closeContextMenu(); });
             menu.appendChild(button);
         });
@@ -703,6 +707,8 @@ class CanvasManager {
         const element = this.store.getState().elements.find(item => item.id === id);
         if (!element) return;
         if (action === 'duplicate') this.store.duplicateElement(id);
+        else if (action === 'group') this.store.groupElements();
+        else if (action === 'ungroup') this.store.ungroupElements();
         else if (action === 'delete') this.store.deleteElement(id);
         else if (action === 'lock') this.store.updateElement(id, { locked: !element.locked });
         else if (action === 'visibility') this.store.updateElement(id, { hidden: !element.hidden, styles: { ...element.styles, visibility: element.hidden ? 'visible' : 'hidden' } });

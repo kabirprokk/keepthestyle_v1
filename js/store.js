@@ -26,6 +26,9 @@ class Store {
             siteLanguage: 'en',
             textDirection: 'auto',
             siteDescription: '',
+            siteKeywords: '',
+            canonicalUrl: '',
+            socialImage: '',
             themeColor: '#4d6bff',
             pageTransition: 'fade',
             pageTransitionDuration: 450,
@@ -247,6 +250,12 @@ class Store {
         this.notify(false);
     }
 
+    selectElements(ids) {
+        const valid = new Set(this.state.elements.map(element => element.id));
+        this.state.selectedElements = [...new Set(ids)].filter(id => valid.has(id));
+        this.notify(false);
+    }
+
     duplicateElement(id) {
         const element = this.state.elements.find(el => el.id === id);
         if (element) {
@@ -259,6 +268,7 @@ class Store {
                 }
             });
             newElement.interactions = (newElement.interactions || []).map(rule => ({ ...rule, targetId: rule.targetId === id ? newElement.id : rule.targetId }));
+            delete newElement.groupId;
             this.state.elements.push(newElement);
             this.state.selectedElements = [newElement.id];
             this.saveHistory();
@@ -269,6 +279,7 @@ class Store {
 
     duplicateElements(ids) {
         const idMap = new Map(ids.map(id => [id, this.generateId()]));
+        const groupMap = new Map();
         const copies = ids.map(id => this.state.elements.find(el => el.id === id)).filter(Boolean).map(element => deepClone({
             ...element, id: idMap.get(element.id),
             position: {
@@ -276,6 +287,7 @@ class Store {
                 y: Math.max(0, Math.min((element.position?.y || 0) + 20, this.state.pageSize.height - (element.size?.height || 1)))
             }
         }));
+        copies.forEach(copy => { if (copy.groupId) { if (!groupMap.has(copy.groupId)) groupMap.set(copy.groupId, `group_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`); copy.groupId = groupMap.get(copy.groupId); } });
         copies.forEach(copy => { copy.interactions = (copy.interactions || []).map(rule => ({ ...rule, targetId: idMap.get(rule.targetId) || rule.targetId })); });
         if (!copies.length) return;
         this.state.elements.push(...copies);
@@ -290,15 +302,34 @@ class Store {
     pasteElements() {
         if (!Array.isArray(this.state.clipboard) || !this.state.clipboard.length) return;
         const idMap = new Map(this.state.clipboard.map(element => [element.id, this.generateId()]));
+        const groupMap = new Map();
         const copies = this.state.clipboard.map(element => deepClone({ ...element, id: idMap.get(element.id), position: {
             x: Math.max(0, Math.min((element.position?.x || 0) + 20, this.state.pageSize.width - (element.size?.width || 1))),
             y: Math.max(0, Math.min((element.position?.y || 0) + 20, this.state.pageSize.height - (element.size?.height || 1)))
         } }));
+        copies.forEach(copy => { if (copy.groupId) { if (!groupMap.has(copy.groupId)) groupMap.set(copy.groupId, `group_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`); copy.groupId = groupMap.get(copy.groupId); } });
         copies.forEach(copy => { copy.interactions = (copy.interactions || []).map(rule => ({ ...rule, targetId: idMap.get(rule.targetId) || rule.targetId })); });
         this.state.clipboard = copies.map(deepClone);
         this.state.elements.push(...copies);
         this.state.selectedElements = copies.map(el => el.id);
         this.saveHistory(); this.notify(); this.saveToStorage();
+    }
+
+    groupElements(ids = this.state.selectedElements) {
+        const members = ids.map(id => this.state.elements.find(element => element.id === id)).filter(Boolean);
+        if (members.length < 2) return false;
+        const groupId = `group_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        members.forEach(element => { element.groupId = groupId; });
+        this.saveHistory(); this.notify(); this.saveToStorage();
+        return true;
+    }
+
+    ungroupElements(ids = this.state.selectedElements) {
+        const groups = new Set(ids.map(id => this.state.elements.find(element => element.id === id)?.groupId).filter(Boolean));
+        if (!groups.size) return false;
+        this.state.elements.forEach(element => { if (groups.has(element.groupId)) delete element.groupId; });
+        this.saveHistory(); this.notify(); this.saveToStorage();
+        return true;
     }
 
     reorderElement(id, action) {
@@ -378,6 +409,9 @@ class Store {
         this.state.siteLanguage = 'en';
         this.state.textDirection = 'auto';
         this.state.siteDescription = '';
+        this.state.siteKeywords = '';
+        this.state.canonicalUrl = '';
+        this.state.socialImage = '';
         this.state.themeColor = '#4d6bff';
         this.state.pageTransition = 'fade';
         this.state.pageTransitionDuration = 450;
@@ -466,6 +500,9 @@ class Store {
                 siteLanguage: this.state.siteLanguage,
                 textDirection: this.state.textDirection,
                 siteDescription: this.state.siteDescription,
+                siteKeywords: this.state.siteKeywords,
+                canonicalUrl: this.state.canonicalUrl,
+                socialImage: this.state.socialImage,
                 themeColor: this.state.themeColor,
                 pageTransition: this.state.pageTransition,
                 pageTransitionDuration: this.state.pageTransitionDuration,
@@ -497,6 +534,9 @@ class Store {
                 this.state.siteLanguage = /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(parsed.siteLanguage || '') ? parsed.siteLanguage : 'en';
                 this.state.textDirection = ['auto', 'ltr', 'rtl'].includes(parsed.textDirection) ? parsed.textDirection : 'auto';
                 this.state.siteDescription = String(parsed.siteDescription || '').slice(0, 300);
+                this.state.siteKeywords = String(parsed.siteKeywords || '').slice(0, 300);
+                this.state.canonicalUrl = String(parsed.canonicalUrl || '').slice(0, 500);
+                this.state.socialImage = String(parsed.socialImage || '').slice(0, 2000);
                 this.state.themeColor = /^#[0-9a-f]{6}$/i.test(parsed.themeColor || '') ? parsed.themeColor : '#4d6bff';
                 this.applyPageTransitionSettings(parsed);
                 this.state.pageSize = this.normalizePageSize(parsed.pageSize);
@@ -519,6 +559,9 @@ class Store {
             siteLanguage: this.state.siteLanguage,
             textDirection: this.state.textDirection,
             siteDescription: this.state.siteDescription,
+            siteKeywords: this.state.siteKeywords,
+            canonicalUrl: this.state.canonicalUrl,
+            socialImage: this.state.socialImage,
             themeColor: this.state.themeColor,
             pageTransition: this.state.pageTransition,
             pageTransitionDuration: this.state.pageTransitionDuration,
@@ -551,6 +594,9 @@ class Store {
             this.state.siteLanguage = /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(data.siteLanguage || '') ? data.siteLanguage : 'en';
             this.state.textDirection = ['auto', 'ltr', 'rtl'].includes(data.textDirection) ? data.textDirection : 'auto';
             this.state.siteDescription = String(data.siteDescription || '').slice(0, 300);
+            this.state.siteKeywords = String(data.siteKeywords || '').slice(0, 300);
+            this.state.canonicalUrl = String(data.canonicalUrl || '').slice(0, 500);
+            this.state.socialImage = String(data.socialImage || '').slice(0, 2000);
             this.state.themeColor = /^#[0-9a-f]{6}$/i.test(data.themeColor || '') ? data.themeColor : '#4d6bff';
             this.applyPageTransitionSettings(data);
             this.state.pageSize = this.normalizePageSize(data.pageSize);

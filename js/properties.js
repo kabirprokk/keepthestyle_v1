@@ -186,7 +186,8 @@ class PropertiesManager {
                 { key: 'textAlign', label: 'Text Align', type: 'select', options: ['left', 'center', 'right', 'justify'], default: 'left' },
                 { key: 'textDecoration', label: 'Decoration', type: 'select', options: ['none', 'underline', 'line-through', 'overline'], default: 'none' },
                 { key: 'textTransform', label: 'Transform', type: 'select', options: ['none', 'uppercase', 'lowercase', 'capitalize'], default: 'none' },
-                { key: 'color', label: 'Color', type: 'color', default: '#000000' }
+                { key: 'color', label: 'Color', type: 'color', default: '#000000' },
+                { key: 'textShadow', label: 'Text Shadow', type: 'text', default: 'none' }
             ]
         };
 
@@ -194,7 +195,7 @@ class PropertiesManager {
             expanded: true,
             properties: [
                 { key: 'backgroundColor', label: 'Background Color', type: 'color', default: '#FFFFFF' },
-                { key: 'backgroundImage', label: 'Image', type: 'text', default: 'none' },
+                { key: 'backgroundImage', label: 'Image / Gradient', type: 'text', default: 'none' },
                 { key: 'backgroundRepeat', label: 'Repeat', type: 'select', options: ['repeat', 'no-repeat', 'repeat-x', 'repeat-y'], default: 'repeat' },
                 { key: 'backgroundPosition', label: 'Position', type: 'text', default: '0% 0%' },
                 { key: 'backgroundSize', label: 'Size', type: 'text', default: 'auto' },
@@ -219,6 +220,7 @@ class PropertiesManager {
             { key: 'borderWidth', label: 'Width', type: 'number', units: ['px', 'em', 'rem'], default: '1' },
             { key: 'borderColor', label: 'Color', type: 'color', default: '#E8E8E8' },
             { key: 'borderStyle', label: 'Style', type: 'select', options: ['none', 'solid', 'dashed', 'dotted', 'double'], default: 'solid' }
+            ,{ key: 'outline', label: 'Outline', type: 'text', default: 'none' }
         );
 
         groups['Border'] = {
@@ -245,7 +247,11 @@ class PropertiesManager {
             { key: 'filter', label: 'Filter', type: 'text', default: 'none' },
             { key: 'backdropFilter', label: 'Backdrop Filter', type: 'text', default: 'none' },
             { key: 'mixBlendMode', label: 'Mix Blend', type: 'select', options: ['normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten'], default: 'normal' },
-            { key: 'transform', label: 'Transform', type: 'text', default: 'none' }
+            { key: 'transform', label: 'Transform', type: 'text', default: 'none' },
+            { key: 'transformOrigin', label: 'Transform Origin', type: 'text', default: 'center center' },
+            { key: 'clipPath', label: 'Clip Path', type: 'text', default: 'none' },
+            { key: 'perspective', label: 'Perspective', type: 'number', units: ['px'], default: 'none' },
+            { key: 'isolation', label: 'Isolation', type: 'select', options: ['auto', 'isolate'], default: 'auto' }
         );
 
         groups['Effects'] = {

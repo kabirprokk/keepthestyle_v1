@@ -19,7 +19,9 @@ class KeyboardShortcuts {
             'delete': 'delete',
             'backspace': 'delete',
             'escape': 'deselect',
-            'ctrl+a': 'selectAll'
+            'ctrl+a': 'selectAll',
+            'ctrl+g': 'group',
+            'ctrl+shift+g': 'ungroup'
         };
         
         this.bindEvents();
@@ -50,7 +52,7 @@ class KeyboardShortcuts {
         
         if (action) {
             // Ignore certain shortcuts if user is typing
-            if (isTyping && ['delete', 'backspace', 'ctrl+a', 'ctrl+d', 'ctrl+c', 'ctrl+v', 'ctrl+z', 'ctrl+y'].includes(shortcut)) {
+            if (isTyping && ['delete', 'backspace', 'ctrl+a', 'ctrl+d', 'ctrl+c', 'ctrl+v', 'ctrl+z', 'ctrl+y', 'ctrl+g', 'ctrl+shift+g'].includes(shortcut)) {
                 return;
             }
             e.preventDefault();
@@ -95,9 +97,13 @@ class KeyboardShortcuts {
                 break;
             case 'selectAll':
                 const stateAll = this.store.getState();
-                stateAll.elements.forEach(el => {
-                    this.store.selectElement(el.id);
-                });
+                this.store.selectElements(stateAll.elements.map(element => element.id));
+                break;
+            case 'group':
+                this.store.groupElements();
+                break;
+            case 'ungroup':
+                this.store.ungroupElements();
                 break;
         }
     }

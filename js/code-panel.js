@@ -121,6 +121,8 @@ class CodePanel {
         html += `    <meta charset="UTF-8">\n`;
         html += `    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n`;
         html += `    <meta name="description" content="${escapeHTML(state.siteDescription || '')}">\n`;
+        html += `    <meta name="keywords" content="${escapeHTML(state.siteKeywords || '')}">\n`;
+        if (state.canonicalUrl) html += `    <link rel="canonical" href="${escapeHTML(state.canonicalUrl)}">\n`;
         html += `    <meta name="theme-color" content="${escapeHTML(state.themeColor || '#4d6bff')}">\n`;
         html += `    <title>${escapeHTML(state.projectName)}</title>\n`;
         html += `    <link rel="stylesheet" href="styles.css">\n`;
@@ -141,6 +143,9 @@ class CodePanel {
         const content = escapeHTML(element.content || '');
         const attributes = { ...(element.attributes || {}) };
         attributes.id = safeDomId(attributes.id || element.id);
+        if (tag === 'img') { attributes.loading ||= 'lazy'; attributes.decoding ||= 'async'; }
+        if (tag === 'iframe') attributes.loading ||= 'lazy';
+        if (tag === 'video') { attributes.preload ||= 'metadata'; attributes.playsinline = true; }
         if (element.hidden) attributes.hidden = true;
         if (attributes.target === '_blank') attributes.rel = 'noopener noreferrer';
         const renderedAttributes = this.renderAttributes(attributes);
