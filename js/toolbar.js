@@ -129,41 +129,66 @@ class ToolbarManager {
             <p>Add media from a web URL or choose a small local file. Uploaded files are embedded into the project and exported website.</p>
             <form class="media-form">
                 <div class="media-field"><label for="media-type">Media type</label><select id="media-type"><option value="image">Image</option><option value="video">Video</option><option value="audio">Audio</option><option value="embed">YouTube, Vimeo, or embed</option><option value="link">Media link or button</option></select></div>
-                <div class="media-field"><label for="media-url">Media URL</label><input id="media-url" type="url" placeholder="https://example.com/media.jpg"><span class="media-help">YouTube and Vimeo links are converted to embeds automatically.</span></div>
-                <div class="media-field media-file-field"><label for="media-file">Or choose a local file</label><input id="media-file" type="file" accept="image/*"><span class="media-help">Maximum 4 MB. URLs are recommended for larger videos.</span></div>
-                <div class="media-field media-label-field" hidden><label for="media-label">Link text</label><input id="media-label" type="text" maxlength="120" value="Open media"></div>
+                <div class="media-field media-source-field"><label for="media-source">Source</label><select id="media-source"><option value="url">Use a web link</option><option value="upload">Upload a local file</option></select></div>
+                <div class="media-field media-url-field"><label for="media-url">Media URL</label><input id="media-url" type="url" placeholder="https://example.com/media.jpg"><span class="media-help">YouTube and Vimeo links are converted to embeds automatically.</span></div>
+                <div class="media-field media-file-field" hidden><label for="media-file">Choose a local file</label><input id="media-file" type="file" accept="image/*"><span class="media-help">Maximum 4 MB. URLs are recommended for larger videos.</span></div>
+                <div class="media-field media-destination-field"><label for="media-destination">Add image as</label><select id="media-destination"><option value="new">New image element</option></select></div>
+                <div class="media-field media-label-field" hidden><label for="media-label">Link text</label><input id="media-label" type="text" maxlength="120"></div>
                 <div class="app-dialog-actions"><button type="button" class="btn media-cancel">Cancel</button><button type="submit" class="btn btn-primary">Add to canvas</button></div>
             </form>`;
         backdrop.appendChild(dialog);
         document.body.appendChild(backdrop);
         const form = dialog.querySelector('form');
         const type = dialog.querySelector('#media-type');
+        const sourceMode = dialog.querySelector('#media-source');
         const url = dialog.querySelector('#media-url');
         const file = dialog.querySelector('#media-file');
         const label = dialog.querySelector('#media-label');
+        const destination = dialog.querySelector('#media-destination');
+        const state = this.store.getState();
+        const selected = state.selectedElements.length === 1 ? state.elements.find(element => element.id === state.selectedElements[0]) : null;
+        if (selected) {
+            const option = document.createElement('option');
+            option.value = 'selected';
+            option.textContent = selected.tag === 'img' ? 'Replace selected image' : selected.tag === 'video' ? 'Use as selected video poster' : `Background of selected ${selected.name || selected.tag}`;
+            destination.appendChild(option);
+        }
         const onKeyDown = event => { if (event.key === 'Escape') close(); };
         const close = () => { document.removeEventListener('keydown', onKeyDown); backdrop.remove(); };
         const syncFields = () => {
             const accepts = { image: 'image/*', video: 'video/*', audio: 'audio/*' };
             const supportsFile = Object.hasOwn(accepts, type.value);
-            dialog.querySelector('.media-file-field').hidden = !supportsFile;
-            dialog.querySelector('.media-label-field').hidden = type.value !== 'link';
+            if (!supportsFile) sourceMode.value = 'url';
+            sourceMode.disabled = !supportsFile;
+            dialog.querySelector('.media-url-field').hidden = sourceMode.value !== 'url';
+            dialog.querySelector('.media-file-field').hidden = !supportsFile || sourceMode.value !== 'upload';
+            url.disabled = sourceMode.value !== 'url';
+            file.disabled = !supportsFile || sourceMode.value !== 'upload';
+            dialog.querySelector('.media-destination-field').hidden = type.value !== 'image';
+            dialog.querySelector('.media-label-field').hidden = !['image', 'embed', 'link'].includes(type.value);
+            dialog.querySelector('.media-label-field label').textContent = type.value === 'image' ? 'Alt text' : type.value === 'embed' ? 'Embed title' : 'Link text';
             file.accept = accepts[type.value] || '';
             url.placeholder = type.value === 'embed' ? 'https://youtube.com/watch?v=...' : type.value === 'link' ? 'https://example.com' : `https://example.com/media.${type.value === 'image' ? 'jpg' : type.value === 'video' ? 'mp4' : 'mp3'}`;
         };
         type.addEventListener('change', syncFields);
+        sourceMode.addEventListener('change', syncFields);
         dialog.querySelector('.media-cancel').addEventListener('click', close);
         backdrop.addEventListener('mousedown', event => { if (event.target === backdrop) close(); });
         document.addEventListener('keydown', onKeyDown);
         form.addEventListener('submit', async event => {
             event.preventDefault();
             try {
-                let source = url.value.trim();
-                if (file.files[0]) source = await this.readMediaFile(file.files[0], type.value);
-                if (!source) throw new Error('Choose a file or enter a media URL');
-                this.addMediaElement(type.value, source, label.value.trim());
+                let source = '';
+                if (sourceMode.value === 'upload') {
+                    if (!file.files[0]) throw new Error('Choose a local file to upload');
+                    source = await this.readMediaFile(file.files[0], type.value);
+                } else {
+                    source = url.value.trim();
+                    if (!source) throw new Error('Enter a media URL');
+                }
+                const applied = this.addMediaElement(type.value, source, label.value.trim(), destination.value);
                 close();
-                this.showNotification('Media added to canvas');
+                this.showNotification(applied ? 'Image applied to selected element' : 'Media added to canvas');
             } catch (error) {
                 showToast(error.message || 'Unable to add media', 'error');
             }
@@ -184,14 +209,29 @@ class ToolbarManager {
         });
     }
 
-    addMediaElement(type, source, label = '') {
+    addMediaElement(type, source, label = '', destination = 'new') {
         if (/^\s*javascript:/i.test(source)) throw new Error('This URL type is not allowed');
-        const page = this.store.getState().pageSize;
+        const state = this.store.getState();
+        const page = state.pageSize;
+        if (type === 'image' && destination === 'selected' && state.selectedElements.length === 1) {
+            const selected = state.elements.find(element => element.id === state.selectedElements[0]);
+            if (selected) {
+                if (selected.tag === 'img') {
+                    this.store.updateElement(selected.id, { attributes: { ...selected.attributes, src: source, alt: label || selected.attributes?.alt || 'Image' } });
+                } else if (selected.tag === 'video') {
+                    this.store.updateElement(selected.id, { attributes: { ...selected.attributes, poster: source } });
+                } else {
+                    const safeSource = source.replace(/["\\\n\r]/g, character => `\\${character}`);
+                    this.store.updateElement(selected.id, { styles: { ...selected.styles, backgroundImage: `url("${safeSource}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' } });
+                }
+                return true;
+            }
+        }
         const presets = {
             image: { tag: 'img', width: 480, height: 320, attributes: { src: source, alt: label || 'Image', loading: 'lazy' }, styles: { objectFit: 'contain' } },
             video: { tag: 'video', width: 640, height: 360, attributes: { src: source, controls: true, preload: 'metadata' }, styles: { objectFit: 'contain', backgroundColor: '#000000' } },
             audio: { tag: 'audio', width: 480, height: 54, attributes: { src: source, controls: true, preload: 'metadata' }, styles: {} },
-            embed: { tag: 'iframe', width: 640, height: 360, attributes: { src: this.normalizeEmbedUrl(source), title: label || 'Embedded media', loading: 'lazy', allowfullscreen: true, allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture' }, styles: { border: '0' } },
+            embed: { tag: 'iframe', width: 640, height: 360, attributes: { src: type === 'embed' ? this.normalizeEmbedUrl(source) : source, title: label || 'Embedded media', loading: 'lazy', allowfullscreen: true, allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture' }, styles: { border: '0' } },
             link: { tag: 'a', width: 220, height: 48, attributes: { href: source, target: '_blank', rel: 'noopener noreferrer' }, content: label || 'Open media', styles: { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 18px', borderRadius: '8px', backgroundColor: '#4D6BFF', color: '#FFFFFF', textDecoration: 'none', fontWeight: '600' } }
         };
         const preset = presets[type];
@@ -205,6 +245,7 @@ class ToolbarManager {
             content: preset.content || '',
             attributes: preset.attributes
         });
+        return false;
     }
 
     normalizeEmbedUrl(value) {
