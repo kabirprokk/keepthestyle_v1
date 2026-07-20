@@ -30,6 +30,7 @@ class Store {
             pageTransition: 'fade',
             pageTransitionDuration: 450,
             pageTransitionEasing: 'ease-in-out',
+            pageTransitions: [],
             isDragging: false,
             hasLoadedProject: false,
             dragOffset: { x: 0, y: 0 },
@@ -381,6 +382,7 @@ class Store {
         this.state.pageTransition = 'fade';
         this.state.pageTransitionDuration = 450;
         this.state.pageTransitionEasing = 'ease-in-out';
+        this.state.pageTransitions = [];
         this.state.history = [];
         this.state.historyIndex = -1;
         this.saveHistory(); this.notify(); this.saveToStorage();
@@ -431,6 +433,7 @@ class Store {
         const index = this.state.pages.findIndex(item => item.id === id);
         if (index < 0) return false;
         this.state.pages.splice(index, 1);
+        this.state.pageTransitions = (this.state.pageTransitions || []).filter(route => route.fromId !== id && route.toId !== id);
         this.state.pages.forEach(page => page.elements.forEach(element => { element.interactions = (element.interactions || []).filter(rule => !(rule.action === 'page' && rule.value === id)); }));
         if (this.state.activePageId === id) this.switchPage(this.state.pages[Math.max(0, index - 1)].id);
         else { this.notify(); this.saveToStorage(); }
@@ -467,6 +470,7 @@ class Store {
                 pageTransition: this.state.pageTransition,
                 pageTransitionDuration: this.state.pageTransitionDuration,
                 pageTransitionEasing: this.state.pageTransitionEasing,
+                pageTransitions: this.state.pageTransitions,
                 pageSize: this.state.pageSize,
                 gridVisible: this.state.gridVisible,
                 snapEnabled: this.state.snapEnabled,
@@ -519,6 +523,7 @@ class Store {
             pageTransition: this.state.pageTransition,
             pageTransitionDuration: this.state.pageTransitionDuration,
             pageTransitionEasing: this.state.pageTransitionEasing,
+            pageTransitions: this.state.pageTransitions,
             pageSize: this.state.pageSize,
             gridVisible: this.state.gridVisible,
             snapEnabled: this.state.snapEnabled,
@@ -586,6 +591,13 @@ class Store {
         this.state.pageTransition = transitions.includes(data.pageTransition) ? data.pageTransition : 'fade';
         this.state.pageTransitionDuration = Math.min(2000, Math.max(100, Math.round(Number(data.pageTransitionDuration) || 450)));
         this.state.pageTransitionEasing = easings.includes(data.pageTransitionEasing) ? data.pageTransitionEasing : 'ease-in-out';
+        this.state.pageTransitions = Array.isArray(data.pageTransitions) ? data.pageTransitions.filter(route => route && typeof route.fromId === 'string' && typeof route.toId === 'string').map(route => ({
+            fromId: route.fromId,
+            toId: route.toId,
+            type: transitions.includes(route.type) ? route.type : this.state.pageTransition,
+            duration: Math.min(2000, Math.max(100, Math.round(Number(route.duration) || this.state.pageTransitionDuration))),
+            easing: easings.includes(route.easing) ? route.easing : this.state.pageTransitionEasing
+        })) : [];
     }
 }
 

@@ -38,7 +38,7 @@ class CanvasManager {
         const controls = this.container.querySelector('.canvas-controls');
         const group = document.createElement('div');
         group.className = 'page-manager-controls';
-        group.innerHTML = `<span class="page-manager-label">Page</span><select class="page-switcher" aria-label="Current page"></select><input class="page-name-input" aria-label="Page name" maxlength="50"><button data-page-action="add" title="Add page">＋</button><button data-page-action="duplicate" title="Duplicate page">⧉</button><button data-page-action="delete" title="Delete page">×</button>`;
+        group.innerHTML = `<span class="page-manager-label">Page</span><select class="page-switcher" aria-label="Current page"></select><button class="page-transition-add" data-page-action="transition" title="Add transition between pages" aria-label="Add transition between pages">+</button><input class="page-name-input" aria-label="Page name" maxlength="50"><button data-page-action="add" title="Add page">＋</button><button data-page-action="duplicate" title="Duplicate page">⧉</button><button data-page-action="delete" title="Delete page">×</button>`;
         controls.appendChild(group);
         const select = group.querySelector('.page-switcher');
         const name = group.querySelector('.page-name-input');
@@ -46,6 +46,7 @@ class CanvasManager {
         name.addEventListener('change', () => this.store.renamePage(this.store.getState().activePageId, name.value));
         name.addEventListener('keydown', e => { if (e.key === 'Enter') name.blur(); });
         group.querySelector('[data-page-action="add"]').addEventListener('click', () => this.store.addPage(`Page ${this.store.getState().pages.length + 1}`));
+        group.querySelector('[data-page-action="transition"]').addEventListener('click', () => this.openPageTransitionDialog());
         group.querySelector('[data-page-action="duplicate"]').addEventListener('click', () => this.store.duplicatePage(this.store.getState().activePageId));
         group.querySelector('[data-page-action="delete"]').addEventListener('click', async () => {
             if (this.store.getState().pages.length <= 1) { showToast('A project needs at least one page', 'error'); return; }
@@ -75,6 +76,51 @@ class CanvasManager {
         const input = this.pageControls.querySelector('.page-name-input');
         if (document.activeElement !== input) input.value = page?.name || '';
         this.pageControls.querySelector('[data-page-action="delete"]').disabled = state.pages.length <= 1;
+        this.pageControls.querySelector('[data-page-action="transition"]').disabled = state.pages.length <= 1;
+    }
+
+    openPageTransitionDialog() {
+        const state = this.store.getState();
+        if (state.pages.length < 2) { showToast('Add another page before creating a transition', 'error'); return; }
+        const backdrop = document.createElement('div');
+        backdrop.className = 'app-dialog-backdrop';
+        const dialog = document.createElement('div');
+        dialog.className = 'app-dialog page-transition-dialog';
+        dialog.setAttribute('role', 'dialog');
+        dialog.setAttribute('aria-modal', 'true');
+        dialog.setAttribute('aria-labelledby', 'transition-dialog-title');
+        const pageOptions = state.pages.map(page => `<option value="${escapeHTML(page.id)}">${escapeHTML(page.name)}</option>`).join('');
+        dialog.innerHTML = `<h2 id="transition-dialog-title">Add page transition</h2><p>Choose how the website moves from one page to another.</p><form class="media-form"><div class="transition-route"><div class="media-field"><label for="transition-from">From</label><select id="transition-from">${pageOptions}</select></div><span class="transition-plus">+</span><div class="media-field"><label for="transition-to">To</label><select id="transition-to">${pageOptions}</select></div></div><div class="settings-grid"><div class="media-field"><label for="route-transition-style">Transition</label><select id="route-transition-style"><option value="fade">Fade</option><option value="slide-left">Slide left</option><option value="slide-right">Slide right</option><option value="slide-up">Slide up</option><option value="zoom">Zoom</option><option value="blur">Blur</option><option value="flip">3D flip</option><option value="none">None</option></select></div><div class="media-field"><label for="route-transition-duration">Duration (ms)</label><input id="route-transition-duration" type="number" min="100" max="2000" step="50" value="${state.pageTransitionDuration || 450}"></div></div><div class="media-field"><label for="route-transition-easing">Easing</label><select id="route-transition-easing"><option value="ease-in-out">Ease in/out</option><option value="ease">Ease</option><option value="ease-in">Ease in</option><option value="ease-out">Ease out</option><option value="linear">Linear</option></select></div><div class="app-dialog-actions"><button type="button" class="btn transition-cancel">Cancel</button><button type="submit" class="btn btn-primary">Add transition</button></div></form>`;
+        backdrop.appendChild(dialog);
+        document.body.appendChild(backdrop);
+        const from = dialog.querySelector('#transition-from');
+        const to = dialog.querySelector('#transition-to');
+        from.value = state.activePageId;
+        const syncDestination = () => {
+            [...to.options].forEach(option => { option.disabled = option.value === from.value; });
+            if (to.value === from.value) to.value = [...to.options].find(option => !option.disabled)?.value || '';
+        };
+        syncDestination();
+        from.addEventListener('change', syncDestination);
+        const close = () => { document.removeEventListener('keydown', onKeyDown); backdrop.remove(); };
+        const onKeyDown = event => { if (event.key === 'Escape') close(); };
+        document.addEventListener('keydown', onKeyDown);
+        dialog.querySelector('.transition-cancel').addEventListener('click', close);
+        backdrop.addEventListener('mousedown', event => { if (event.target === backdrop) close(); });
+        dialog.querySelector('form').addEventListener('submit', event => {
+            event.preventDefault();
+            const route = {
+                fromId: from.value, toId: to.value,
+                type: dialog.querySelector('#route-transition-style').value,
+                duration: Math.min(2000, Math.max(100, Number(dialog.querySelector('#route-transition-duration').value) || 450)),
+                easing: dialog.querySelector('#route-transition-easing').value
+            };
+            const routes = (this.store.getState().pageTransitions || []).filter(item => item.fromId !== route.fromId || item.toId !== route.toId);
+            this.store.setState({ pageTransitions: [...routes, route] });
+            close();
+            showToast('Page transition added');
+        });
+        to.focus();
     }
 
     subscribeToStore() {

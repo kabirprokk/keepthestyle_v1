@@ -433,7 +433,8 @@ class ToolbarManager {
             html += this.renderElementHTML(el, 1);
         });
         
-        const runtime = `${generatePageTransitionRuntime(state)}\n${generateSiteRuntime(elements, state.pages)}`;
+        const currentPageId = state.pages.find(page => page.elements === elements)?.id || state.activePageId;
+        const runtime = `${generatePageTransitionRuntime(state, { currentPageId })}\n${generateSiteRuntime(elements, state.pages)}`;
         html += `    <script>\n${runtime.split('\n').map(line => '    ' + line).join('\n')}\n    </script>\n`;
         html += `</body>
 </html>`;
@@ -577,7 +578,7 @@ body {
             return `    <main class="kts-preview-page" data-page-id="${escapeHTML(page.id)}"${page.id === state.activePageId ? '' : ' hidden'}>\n${content}    </main>`;
         }).join('\n');
         const runtime = generateSiteRuntime(allElements, state.pages, { preview: true, singleFile: options.download });
-        const transitionRuntime = generatePageTransitionRuntime(state, { preview: true });
+        const transitionRuntime = generatePageTransitionRuntime(state, { preview: true, currentPageId: state.activePageId });
         return `<!DOCTYPE html>
 <html lang="${escapeHTML(language)}" dir="${direction}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="${escapeHTML(state.siteDescription || '')}"><meta name="theme-color" content="${escapeHTML(state.themeColor || '#4d6bff')}"><meta name="generator" content="KeepTheStyle"><meta property="og:title" content="${escapeHTML(state.projectName)}"><meta property="og:description" content="${escapeHTML(state.siteDescription || '')}">
@@ -589,7 +590,7 @@ body {
 ${pages}
 </div></div><script>const ktsPageWidth=${state.pageSize.width};const ktsPageHeight=${state.pageSize.height};function ktsFitPreview(){const scale=Math.min(window.innerWidth/ktsPageWidth,window.innerHeight/ktsPageHeight,1);const stage=document.querySelector('.kts-preview-stage');stage.style.width=(ktsPageWidth*scale)+'px';stage.style.height=(ktsPageHeight*scale)+'px';document.querySelectorAll('.kts-preview-page').forEach(page=>page.style.transform='scale('+scale+')')}window.addEventListener('resize',ktsFitPreview);
 ${transitionRuntime}
-window.__ktsShowPage=function(id,updateHash=true,animate=true){const page=[...document.querySelectorAll('.kts-preview-page')].find(item=>item.dataset.pageId===id);if(!page)return;const swap=()=>{document.querySelectorAll('.kts-preview-page').forEach(item=>item.hidden=item!==page);if(updateHash&&location.hash!=='#'+id)history.pushState(null,'','#'+id);window.scrollTo(0,0);ktsFitPreview()};if(animate&&window.__ktsRunPageTransition)window.__ktsRunPageTransition(swap);else swap()};window.addEventListener('hashchange',()=>window.__ktsShowPage(location.hash.slice(1),false));const ktsInitialPage=location.hash.slice(1)||${safeInlineJSON(state.activePageId)};window.__ktsShowPage(ktsInitialPage,false,false);ktsFitPreview();
+window.__ktsShowPage=function(id,updateHash=true,animate=true){const page=[...document.querySelectorAll('.kts-preview-page')].find(item=>item.dataset.pageId===id);if(!page)return;const swap=()=>{document.querySelectorAll('.kts-preview-page').forEach(item=>item.hidden=item!==page);if(window.__ktsSetCurrentPage)window.__ktsSetCurrentPage(id);if(updateHash&&location.hash!=='#'+id)history.pushState(null,'','#'+id);window.scrollTo(0,0);ktsFitPreview()};if(animate&&window.__ktsRunPageTransition)window.__ktsRunPageTransition(swap,id);else swap()};window.addEventListener('hashchange',()=>window.__ktsShowPage(location.hash.slice(1),false));const ktsInitialPage=location.hash.slice(1)||${safeInlineJSON(state.activePageId)};window.__ktsShowPage(ktsInitialPage,false,false);ktsFitPreview();
 ${runtime}</script></body></html>`;
     }
 

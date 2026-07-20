@@ -18,6 +18,7 @@ The project is built with plain HTML, CSS, and JavaScript. It has no framework d
 - Inline text editing directly on the canvas
 - Multi-page projects with page creation, duplication, renaming, deletion, and navigation actions
 - Editable page-to-page transitions with fade, directional slides, zoom, blur, and 3D flip effects
+- A dedicated `+` button beside the page selector for creating different transitions between specific page pairs
 - No-code interactions for clicks, hover, page load, and scroll-into-view events
 - Animation presets with configurable duration, delay, easing, and repetition
 - Twenty-two animation presets including slides, zooms, rotate, flip, blur, reveal, roll, skew, wobble, heartbeat, swing, and float
