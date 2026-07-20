@@ -7,6 +7,7 @@ class CanvasManager {
     constructor(container) {
         this.container = container;
         this.canvasPage = container.querySelector('.canvas-page');
+        this.canvasStage = container.querySelector('.canvas-stage');
         this.canvasWrapper = container.querySelector('.canvas-wrapper');
         this.store = window.store;
         
@@ -272,6 +273,8 @@ class CanvasManager {
         this.syncCanvasControls();
         this.canvasPage.style.transform = `scale(${this.zoomLevel})`;
         this.canvasPage.style.transformOrigin = 'top left';
+        this.canvasStage.style.width = `${state.pageSize.width * this.zoomLevel}px`;
+        this.canvasStage.style.height = `${state.pageSize.height * this.zoomLevel}px`;
     }
 
     createElementNode(element, selectedIds) {
