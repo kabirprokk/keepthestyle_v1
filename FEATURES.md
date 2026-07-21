@@ -19,7 +19,7 @@ This matrix tracks the professional-builder roadmap against the current browser-
 
 | Area | Current foundation | Next product step |
 | --- | --- | --- |
-| Responsive design | Page presets and full-viewport preview/export | Per-breakpoint style overrides and device visibility |
+| Responsive design | Desktop, tablet and mobile cascading style overrides, device-sized authoring canvas, responsive preview/export CSS | Responsive geometry constraints and device visibility shortcuts |
 | Nested design | Element child data and semantic containers | Visual parent/child drop zones and DOM-tree nesting controls |
 | Components | Page duplication and grouped elements | Named reusable components, instances and override management |
 | Global design | Design System manager, exported CSS variables, theme mode and shared font catalog | Named token sets, aliases and global class manager |

@@ -20,6 +20,8 @@ class Store {
             rulersVisible: true,
             snapEnabled: true,
             pageSize: { width: 1920, height: 1080 },
+            activeBreakpoint: 'base',
+            basePageSize: { width: 1920, height: 1080 },
             darkMode: false,
             activeTab: 'html',
             projectName: 'Untitled Project',
@@ -192,6 +194,7 @@ class Store {
             position: elementData.position || { x: 100, y: 100 },
             size: elementData.size || { width: 200, height: 150 },
             styles: elementData.styles || {},
+            responsiveStyles: elementData.responsiveStyles || {},
             content: elementData.content || '',
             attributes: elementData.attributes || {},
             interactions: Array.isArray(elementData.interactions) ? elementData.interactions : [],
@@ -540,7 +543,7 @@ class Store {
                 pageTransitionDuration: this.state.pageTransitionDuration,
                 pageTransitionEasing: this.state.pageTransitionEasing,
                 pageTransitions: this.state.pageTransitions,
-                pageSize: this.state.pageSize,
+                pageSize: this.state.activeBreakpoint === 'base' ? this.state.pageSize : (this.state.basePageSize || this.state.pageSize),
                 gridVisible: this.state.gridVisible,
                 snapEnabled: this.state.snapEnabled,
                 lastUpdate: this.state.lastUpdate
@@ -574,6 +577,8 @@ class Store {
                 this.state.themeColor = /^#[0-9a-f]{6}$/i.test(parsed.themeColor || '') ? parsed.themeColor : '#4d6bff';
                 this.applyPageTransitionSettings(parsed);
                 this.state.pageSize = this.normalizePageSize(parsed.pageSize);
+                this.state.basePageSize = { ...this.state.pageSize };
+                this.state.activeBreakpoint = 'base';
                 this.state.gridVisible = parsed.gridVisible !== false;
                 this.state.snapEnabled = parsed.snapEnabled !== false;
                 this.saveHistory();
@@ -603,7 +608,7 @@ class Store {
             pageTransitionDuration: this.state.pageTransitionDuration,
             pageTransitionEasing: this.state.pageTransitionEasing,
             pageTransitions: this.state.pageTransitions,
-            pageSize: this.state.pageSize,
+            pageSize: this.state.activeBreakpoint === 'base' ? this.state.pageSize : (this.state.basePageSize || this.state.pageSize),
             gridVisible: this.state.gridVisible,
             snapEnabled: this.state.snapEnabled,
             version: '2.0.0'
@@ -630,6 +635,10 @@ class Store {
                     position: { x: Number.isFinite(x) ? Math.max(0, x) : 100, y: Number.isFinite(y) ? Math.max(0, y) : 100 },
                     size: { width: Number.isFinite(width) ? Math.max(1, width) : 200, height: Number.isFinite(height) ? Math.max(1, height) : 150 },
                     styles: item?.styles && typeof item.styles === 'object' && !Array.isArray(item.styles) ? item.styles : {},
+                    responsiveStyles: item?.responsiveStyles && typeof item.responsiveStyles === 'object' && !Array.isArray(item.responsiveStyles) ? {
+                        tablet: item.responsiveStyles.tablet && typeof item.responsiveStyles.tablet === 'object' ? item.responsiveStyles.tablet : {},
+                        mobile: item.responsiveStyles.mobile && typeof item.responsiveStyles.mobile === 'object' ? item.responsiveStyles.mobile : {}
+                    } : {},
                     attributes,
                     interactions: Array.isArray(item?.interactions) ? item.interactions : [],
                     children: Array.isArray(item?.children) ? item.children : []
@@ -670,6 +679,8 @@ class Store {
             this.state.themeColor = /^#[0-9a-f]{6}$/i.test(data.themeColor || '') ? data.themeColor : '#4d6bff';
             this.applyPageTransitionSettings({ ...data, pageTransitions: (data.pageTransitions || []).map(route => ({ ...route, fromId: pageIdMap.get(String(route.fromId)) || route.fromId, toId: pageIdMap.get(String(route.toId)) || route.toId })) });
             this.state.pageSize = this.normalizePageSize(data.pageSize);
+            this.state.basePageSize = { ...this.state.pageSize };
+            this.state.activeBreakpoint = 'base';
             this.state.gridVisible = data.gridVisible !== false;
             this.state.snapEnabled = data.snapEnabled !== false;
             this.state.history = [];

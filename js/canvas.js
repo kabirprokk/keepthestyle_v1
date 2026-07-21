@@ -245,7 +245,24 @@ class CanvasManager {
         const pageSelect = this.container.querySelector('.page-size-select');
         pageSelect.addEventListener('change', (e) => {
             const [width, height] = e.target.value.split('x').map(Number);
-            this.store.setState({ pageSize: { width, height } });
+            const state = this.store.getState();
+            const updates = { pageSize: { width, height } };
+            if (state.activeBreakpoint === 'base') updates.basePageSize = { width, height };
+            this.store.setState(updates);
+            this.fitToScreen();
+        });
+
+        const breakpointSelect = this.container.querySelector('.breakpoint-select');
+        breakpointSelect?.addEventListener('change', event => {
+            const breakpoint = event.target.value;
+            const state = this.store.getState();
+            const preset = KTS_BREAKPOINTS[breakpoint] || KTS_BREAKPOINTS.base;
+            const basePageSize = state.activeBreakpoint === 'base' ? state.pageSize : (state.basePageSize || state.pageSize);
+            this.store.setState({
+                activeBreakpoint: breakpoint,
+                basePageSize,
+                pageSize: breakpoint === 'base' ? basePageSize : { width: preset.width, height: preset.height }
+            });
             this.fitToScreen();
         });
 
@@ -400,6 +417,8 @@ class CanvasManager {
 
     syncCanvasControls() {
         const state = this.store.getState();
+        const breakpointSelect = this.container.querySelector('.breakpoint-select');
+        if (breakpointSelect) breakpointSelect.value = state.activeBreakpoint || 'base';
         this.container.querySelectorAll('.canvas-btn').forEach(btn => {
             const active = btn.dataset.action === 'grid' ? state.gridVisible : btn.dataset.action === 'guidelines' ? state.guidelinesVisible : state.rulersVisible;
             btn.classList.toggle('active', active);
@@ -429,6 +448,7 @@ class CanvasManager {
         this.canvasPage.style.height = state.pageSize.height + 'px';
         this.canvasPage.style.backgroundColor = '#FFFFFF';
         this.canvasPage.style.position = 'absolute';
+        this.canvasPage.dataset.breakpoint = state.activeBreakpoint || 'base';
         this.canvasPage.classList.toggle('grid-visible', state.gridVisible);
         
         elements.forEach(element => {
@@ -464,8 +484,9 @@ class CanvasManager {
         }
         
         // Styles
-        if (element.styles) {
-            Object.entries(element.styles).forEach(([prop, value]) => {
+        const renderedStyles = getElementStylesForBreakpoint(element, this.store.getState().activeBreakpoint);
+        if (renderedStyles) {
+            Object.entries(renderedStyles).forEach(([prop, value]) => {
                 try {
                     if (['position', 'left', 'top', 'right', 'bottom', 'width', 'height', 'minWidth', 'maxWidth', 'minHeight', 'maxHeight'].includes(prop)) return;
                     if (element.hidden && prop === 'visibility') return;

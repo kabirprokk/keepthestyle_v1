@@ -13,6 +13,7 @@ The project is built with plain HTML, CSS, and JavaScript. It has no framework d
 - Clean autoplay video blocks with optional controls, looping, sound, play/stop settings, posters, and no-code playback actions
 - Optimized large-media editing with lazy canvas video loading, compact undo snapshots, and revision-aware rendering and autosave
 - Precision canvas with zoom, fit-to-screen, resizing, multi-selection, locking, and layer ordering
+- Responsive authoring with cascading desktop, tablet, and mobile style overrides
 - Logical Group/Ungroup with grouped selection and movement, visible canvas controls, context actions, keyboard shortcuts, and 10%–800% zoom
 - Atomic multi-element moves, nudges, and shared property edits for smoother rendering and cleaner undo history
 - Resilient imports that repair malformed geometry, unsafe attributes, duplicate page identities, slugs, and transition routes
@@ -63,13 +64,14 @@ Then open `http://localhost:8080`.
 ## Building a website
 
 1. Choose a target page size from the canvas toolbar.
-2. Drag components from the left sidebar onto the canvas, or double-click a component to add it centrally.
-3. Move and resize elements visually. Grid snapping is enabled by default; hold `Alt` while dragging for free placement.
-4. Use the right inspector to configure content, appearance, HTML attributes, visibility, locking, and interactions.
-5. Add and connect pages with the page manager and navigation actions.
-6. Open **Settings** to choose the website language, text direction, search description, and browser theme color.
-7. Select **Preview** to test the website in a proportionally scaled, coordinate-accurate view.
-8. Select **Export** to download a deployable website ZIP or another supported format.
+2. Use the **Viewport** selector to switch between Desktop, Tablet, and Mobile. Desktop values are the base; tablet and mobile edits create compact cascading overrides.
+3. Drag components from the left sidebar onto the canvas, or double-click a component to add it centrally.
+4. Move and resize elements visually. Grid snapping is enabled by default; hold `Alt` while dragging for free placement.
+5. Use the right inspector to configure content, appearance, HTML attributes, visibility, locking, and interactions.
+6. Add and connect pages with the page manager and navigation actions.
+7. Open **Settings** to choose the website language, text direction, search description, and browser theme color.
+8. Select **Preview** to test the website in a proportionally scaled, coordinate-accurate view.
+9. Select **Export** to download a deployable website ZIP or another supported format.
 
 Projects are saved automatically in browser storage. Use **Save** to download a portable `.ktstyle` file before clearing browser data or moving to another device.
 

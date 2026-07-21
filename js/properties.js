@@ -37,6 +37,10 @@ class PropertiesManager {
         this.update();
     }
 
+    getEditedStyles(element) {
+        return getElementStylesForBreakpoint(element, this.store.getState().activeBreakpoint || 'base');
+    }
+
     buildInspectorToolbar() {
         const toolbar = document.createElement('div');
         toolbar.className = 'inspector-toolbar';
@@ -99,6 +103,9 @@ class PropertiesManager {
                 { key: 'className', label: 'Classes', type: 'text', default: '' },
                 { key: 'initialVisibility', label: 'On Load', type: 'select', options: ['visible', 'hidden'], default: 'visible' }
             ]},
+            'Responsive': { expanded: true, properties: [
+                { key: 'breakpointVisibility', label: 'On This Viewport', type: 'select', options: ['visible', 'hidden'], default: 'visible' }
+            ]},
             'Interactions': { expanded: true, properties: [
                 { key: 'interactions', label: 'Interactions', type: 'interactions' }
             ]},
@@ -139,7 +146,7 @@ class PropertiesManager {
         // Contextual Flexbox layouts
         if (element) {
             groups['Attributes'] = { expanded: false, properties: this.getAttributeProperties(element) };
-            const displayValue = element.styles.display || 'block';
+            const displayValue = this.getEditedStyles(element).display || 'block';
             if (displayValue === 'flex') {
                 groups['Flexbox'] = {
                     expanded: true,
@@ -166,7 +173,7 @@ class PropertiesManager {
             }
 
             // Contextual Placement offsets
-            const positionValue = element.styles.position || 'static';
+            const positionValue = this.getEditedStyles(element).position || 'static';
             if (positionValue !== 'static') {
                 groups['Placement'] = {
                     expanded: true,
@@ -383,7 +390,7 @@ class PropertiesManager {
                 } else if (this.isMetaProperty(prop.key)) {
                     value = this.getMetaValue(prop.key, element, prop.default);
                 } else if (prop.key.startsWith('shadow')) {
-                    const shadowVal = element.styles['boxShadow'] || 'none';
+                    const shadowVal = this.getEditedStyles(element).boxShadow || 'none';
                     const parsedShadow = this.parseBoxShadow(shadowVal);
                     if (prop.key === 'shadowType') value = parsedShadow.type;
                     else if (prop.key === 'shadowX') value = parsedShadow.x + 'px';
@@ -392,7 +399,7 @@ class PropertiesManager {
                     else if (prop.key === 'shadowSpread') value = parsedShadow.spread + 'px';
                     else if (prop.key === 'shadowColor') value = parsedShadow.color;
                 } else {
-                    value = element.styles[prop.key] ?? prop.default;
+                    value = this.getEditedStyles(element)[prop.key] ?? prop.default;
                 }
                 
                 const selector = `[data-key="${prop.key}"]`;
@@ -739,7 +746,7 @@ class PropertiesManager {
         
         if (propConfig.key.startsWith('shadow')) {
             isShadow = true;
-            const shadowVal = element.styles['boxShadow'] || 'none';
+            const shadowVal = this.getEditedStyles(element).boxShadow || 'none';
             const parsed = this.parseBoxShadow(shadowVal);
             if (propConfig.key === 'shadowType') value = parsed.type;
             else if (propConfig.key === 'shadowX') value = parsed.x + 'px';
@@ -750,7 +757,7 @@ class PropertiesManager {
         } else if (this.isMetaProperty(propConfig.key)) {
             value = this.getMetaValue(propConfig.key, element, propConfig.default);
         } else {
-            value = propConfig.key === 'content' ? element.content : (element.styles[propConfig.key] ?? propConfig.default);
+            value = propConfig.key === 'content' ? element.content : (this.getEditedStyles(element)[propConfig.key] ?? propConfig.default);
         }
         
         const changeCallback = (val) => {
@@ -1026,15 +1033,18 @@ class PropertiesManager {
         if (key === 'content') {
             this.store.updateElements(targets.map(id => ({ id, updates: { content: value } })));
         } else {
+            const breakpoint = this.store.getState().activeBreakpoint || 'base';
             this.store.updateElements(targets.map(id => {
                 const target = this.store.getState().elements.find(item => item.id === id);
-                return target ? { id, updates: { styles: { ...target.styles, [key]: value } } } : null;
+                if (!target) return null;
+                if (breakpoint === 'base') return { id, updates: { styles: { ...target.styles, [key]: value } } };
+                return { id, updates: { responsiveStyles: { ...(target.responsiveStyles || {}), [breakpoint]: { ...(target.responsiveStyles?.[breakpoint] || {}), [key]: value } } } };
             }).filter(Boolean));
         }
     }
 
     isMetaProperty(key) {
-        return key.startsWith('attr:') || key.startsWith('hover') || ['elementName', 'elementId', 'className', 'initialVisibility', 'canvasX', 'canvasY', 'canvasWidth', 'canvasHeight', 'animationPreset', 'videoPlayback', 'videoControls', 'videoLoop', 'videoMuted'].includes(key);
+        return key.startsWith('attr:') || key.startsWith('hover') || ['elementName', 'elementId', 'className', 'initialVisibility', 'breakpointVisibility', 'canvasX', 'canvasY', 'canvasWidth', 'canvasHeight', 'animationPreset', 'videoPlayback', 'videoControls', 'videoLoop', 'videoMuted'].includes(key);
     }
 
     getMetaValue(key, element, fallback = '') {
@@ -1042,6 +1052,7 @@ class PropertiesManager {
         if (key === 'elementId') return (element.attributes || {}).id || '';
         if (key === 'className') return (element.attributes || {}).class || '';
         if (key === 'initialVisibility') return element.hidden ? 'hidden' : 'visible';
+        if (key === 'breakpointVisibility') return this.getEditedStyles(element).display === 'none' ? 'hidden' : 'visible';
         if (key === 'canvasX') return `${element.position?.x || 0}px`;
         if (key === 'canvasY') return `${element.position?.y || 0}px`;
         if (key === 'canvasWidth') return `${element.size?.width || 200}px`;
@@ -1075,6 +1086,19 @@ class PropertiesManager {
             const styles = { ...element.styles };
             if (value === 'hidden') styles.visibility = 'hidden'; else if (styles.visibility === 'hidden') delete styles.visibility;
             return this.store.updateElement(element.id, { hidden: value === 'hidden', styles });
+        }
+        if (key === 'breakpointVisibility') {
+            const breakpoint = this.store.getState().activeBreakpoint || 'base';
+            if (breakpoint === 'base') {
+                const styles = { ...element.styles };
+                if (value === 'hidden') styles.display = 'none'; else if (styles.display === 'none') delete styles.display;
+                return this.store.updateElement(element.id, { styles });
+            }
+            const responsiveStyles = { ...(element.responsiveStyles || {}) };
+            const overrides = { ...(responsiveStyles[breakpoint] || {}) };
+            if (value === 'hidden') overrides.display = 'none'; else delete overrides.display;
+            if (Object.keys(overrides).length) responsiveStyles[breakpoint] = overrides; else delete responsiveStyles[breakpoint];
+            return this.store.updateElement(element.id, { responsiveStyles });
         }
         if (key === 'canvasX' || key === 'canvasY') {
             const axis = key === 'canvasX' ? 'x' : 'y';
@@ -1138,9 +1162,17 @@ class PropertiesManager {
             return this.updateShadowProperty(prop.key, defaults[prop.key], element);
         }
         const targets = this.store.getState().selectedElements;
+        const breakpoint = this.store.getState().activeBreakpoint || 'base';
         this.store.updateElements(targets.map(id => {
             const target = this.store.getState().elements.find(item => item.id === id);
             if (!target) return null;
+            if (breakpoint !== 'base') {
+                const responsiveStyles = { ...(target.responsiveStyles || {}) };
+                const overrides = { ...(responsiveStyles[breakpoint] || {}) };
+                delete overrides[prop.key];
+                if (Object.keys(overrides).length) responsiveStyles[breakpoint] = overrides; else delete responsiveStyles[breakpoint];
+                return { id, updates: { responsiveStyles } };
+            }
             const styles = { ...target.styles };
             delete styles[prop.key];
             return { id, updates: { styles } };
@@ -1150,10 +1182,11 @@ class PropertiesManager {
     updateShadowProperty(key, val, element) {
         const state = this.store.getState();
         const targets = state.selectedElements.length ? state.selectedElements : [element.id];
+        const breakpoint = state.activeBreakpoint || 'base';
         const updates = targets.map(id => {
             const target = state.elements.find(item => item.id === id);
             if (!target) return null;
-            const parsed = this.parseBoxShadow(target.styles?.boxShadow || 'none');
+            const parsed = this.parseBoxShadow(getElementStylesForBreakpoint(target, breakpoint).boxShadow || 'none');
 
             if (key === 'shadowType') {
                 parsed.type = val;
@@ -1172,7 +1205,9 @@ class PropertiesManager {
                 else if (key === 'shadowColor') parsed.color = val || '#000000';
             }
 
-            return { id, updates: { styles: { ...target.styles, boxShadow: this.stringifyBoxShadow(parsed) } } };
+            const boxShadow = this.stringifyBoxShadow(parsed);
+            if (breakpoint === 'base') return { id, updates: { styles: { ...target.styles, boxShadow } } };
+            return { id, updates: { responsiveStyles: { ...(target.responsiveStyles || {}), [breakpoint]: { ...(target.responsiveStyles?.[breakpoint] || {}), boxShadow } } } };
         }).filter(Boolean);
         this.store.updateElements(updates);
     }

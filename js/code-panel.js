@@ -235,6 +235,8 @@ class CodePanel {
         });
         if (elements.some(el => el.styles?.animationName?.startsWith('kts') || (el.interactions || []).some(rule => rule.action === 'animate'))) css += `${getInteractionAnimationCSS()}\n`;
         css += getElementHoverCSS(elements);
+        const responsiveCSS = generateResponsiveCSS(elements);
+        if (responsiveCSS) css += `\n\n/* Responsive overrides */\n${responsiveCSS}\n`;
         return css;
     }
 

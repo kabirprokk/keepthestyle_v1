@@ -202,3 +202,8 @@
     height: 100%;
     width: 20px;
 }
+.breakpoint-control { display: inline-flex; align-items: center; gap: 6px; padding: 3px 5px 3px 9px; border: 1px solid var(--color-border); border-radius: 7px; background: var(--color-white); color: var(--color-dark-gray); font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.breakpoint-select { min-width: 76px; border: 0; background: transparent; color: var(--color-black); font: 600 10px var(--font-family); outline: none; cursor: pointer; }
+.breakpoint-control:focus-within { border-color: var(--color-accent); box-shadow: 0 0 0 2px color-mix(in srgb,var(--color-accent) 12%,transparent); }
+.canvas-page[data-breakpoint="tablet"] { box-shadow: 0 0 0 2px rgba(124,97,255,.3),0 18px 55px rgba(0,0,0,.18); }
+.canvas-page[data-breakpoint="mobile"] { box-shadow: 0 0 0 2px rgba(32,201,151,.34),0 18px 55px rgba(0,0,0,.18); }

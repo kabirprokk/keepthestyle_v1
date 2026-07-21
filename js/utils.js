@@ -53,6 +53,35 @@ function toKebabCase(value) {
     return String(value).replace(/([a-z0-9])([A-Z])/g, '$1-$2').replace(/_/g, '-').toLowerCase();
 }
 
+const KTS_BREAKPOINTS = {
+    base: { label: 'Desktop', width: 1440, height: 900, media: null },
+    tablet: { label: 'Tablet', width: 768, height: 1024, media: 1024 },
+    mobile: { label: 'Mobile', width: 375, height: 812, media: 767 }
+};
+
+function getElementStylesForBreakpoint(element, breakpoint = 'base') {
+    const base = element?.styles || {};
+    if (!breakpoint || breakpoint === 'base') return base;
+    return { ...base, ...(element?.responsiveStyles?.[breakpoint] || {}) };
+}
+
+function generateResponsiveCSS(elements = []) {
+    return ['tablet', 'mobile'].map(breakpoint => {
+        const rules = elements.map(element => {
+            const overrides = element.responsiveStyles?.[breakpoint];
+            if (!overrides || !Object.keys(overrides).length) return '';
+            const id = safeDomId(element.attributes?.id || element.id, 'element');
+            const declarations = Object.entries(overrides)
+                .filter(([key, value]) => key !== 'customCSS' && value !== undefined && value !== null && value !== '')
+                .map(([key, value]) => `        ${toKebabCase(key)}: ${value} !important;`)
+                .join('\n');
+            return declarations ? `    #${id} {\n${declarations}\n    }` : '';
+        }).filter(Boolean);
+        if (!rules.length) return '';
+        return `@media (max-width: ${KTS_BREAKPOINTS[breakpoint].media}px) {\n${rules.join('\n')}\n}`;
+    }).filter(Boolean).join('\n\n');
+}
+
 function safeFilename(value, fallback = 'untitled') {
     const clean = String(value || '').trim().replace(/[<>:"/\\|?*\x00-\x1F]/g, '-').replace(/[. ]+$/g, '').slice(0, 100);
     return clean || fallback;
