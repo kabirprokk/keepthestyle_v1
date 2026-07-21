@@ -3,7 +3,71 @@
  * Initializes all modules and starts the application with real-time support
  */
 
+function createStartupIntro() {
+    const intro = document.getElementById('kts-intro');
+    const app = document.getElementById('app');
+    if (!intro) return { ready() {}, fail() {} };
+
+    const progressBar = intro.querySelector('.intro-progress');
+    const percent = intro.querySelector('.intro-percent');
+    const status = intro.querySelector('.intro-status');
+    const skip = intro.querySelector('.intro-skip');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const startedAt = performance.now();
+    const minimumRunTime = reduceMotion ? 120 : 2800;
+    let applicationReady = false;
+    let completed = false;
+    let frameId = 0;
+
+    if (app) app.inert = true;
+
+    const setProgress = value => {
+        const rounded = Math.max(0, Math.min(100, Math.round(value)));
+        intro.style.setProperty('--intro-progress', `${rounded}%`);
+        if (percent) percent.value = `${rounded}%`;
+        if (status) {
+            status.textContent = rounded < 34 ? 'Preparing your canvas'
+                : rounded < 68 ? 'Loading creative tools'
+                    : rounded < 96 ? 'Polishing the workspace' : 'Ready to create';
+        }
+    };
+
+    const close = () => {
+        if (completed) return;
+        completed = true;
+        cancelAnimationFrame(frameId);
+        setProgress(100);
+        document.body.classList.remove('intro-active');
+        intro.classList.add('is-leaving');
+        if (app) app.inert = false;
+        const removeDelay = reduceMotion ? 140 : 760;
+        window.setTimeout(() => intro.remove(), removeDelay);
+    };
+
+    const tick = now => {
+        if (completed) return;
+        const elapsed = now - startedAt;
+        // Ease quickly through real startup work, then hold just below completion.
+        const staged = Math.min(96, 96 * (1 - Math.exp(-elapsed / 820)));
+        setProgress(staged);
+        if (applicationReady && elapsed >= minimumRunTime) close();
+        else frameId = requestAnimationFrame(tick);
+    };
+
+    skip?.addEventListener('click', close);
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && !completed) close();
+    }, { once: true });
+    frameId = requestAnimationFrame(tick);
+
+    return {
+        ready() { applicationReady = true; },
+        fail() { if (status) status.textContent = 'Opening workspace'; applicationReady = true; }
+    };
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    const startupIntro = createStartupIntro();
     try {
         document.querySelectorAll('button[title]').forEach(button => {
             if (!button.getAttribute('aria-label')) button.setAttribute('aria-label', button.title);
@@ -85,10 +149,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 content: 'Get Started'
             });
         }
+        startupIntro.ready();
         
     } catch (error) {
         console.error('Failed to initialize KeepTheStyle:', error);
         showToast('Failed to initialize application', 'error', 5000);
+        startupIntro.fail();
     }
 });
 
