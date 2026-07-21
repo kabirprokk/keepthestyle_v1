@@ -4,65 +4,49 @@
  */
 
 function createStartupIntro() {
-    const intro = document.getElementById('kts-intro');
     const app = document.getElementById('app');
-    if (!intro) return { ready() {}, fail() {} };
-
-    const progressBar = intro.querySelector('.intro-progress');
-    const percent = intro.querySelector('.intro-percent');
-    const status = intro.querySelector('.intro-status');
-    const skip = intro.querySelector('.intro-skip');
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const startedAt = performance.now();
-    const minimumRunTime = reduceMotion ? 120 : 2800;
+    const frame = document.createElement('iframe');
+    frame.src = 'intro.html';
+    frame.title = 'KeepTheStyle introduction';
+    frame.setAttribute('aria-label', 'KeepTheStyle introduction');
+    frame.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483646;background:#05060a;opacity:1;transition:opacity 900ms cubic-bezier(.22,1,.36,1);';
     let applicationReady = false;
-    let completed = false;
-    let frameId = 0;
+    let introLoaded = false;
+    let closed = false;
 
     if (app) app.inert = true;
+    document.body.appendChild(frame);
 
-    const setProgress = value => {
-        const rounded = Math.max(0, Math.min(100, Math.round(value)));
-        intro.style.setProperty('--intro-progress', `${rounded}%`);
-        if (percent) percent.value = `${rounded}%`;
-        if (status) {
-            status.textContent = rounded < 34 ? 'Preparing your canvas'
-                : rounded < 68 ? 'Loading creative tools'
-                    : rounded < 96 ? 'Polishing the workspace' : 'Ready to create';
-        }
+    const notifyReady = () => {
+        if (applicationReady && introLoaded) frame.contentWindow?.postMessage({ type: 'kts-app-ready' }, '*');
     };
 
     const close = () => {
-        if (completed) return;
-        completed = true;
-        cancelAnimationFrame(frameId);
-        setProgress(100);
+        if (closed) return;
+        closed = true;
         document.body.classList.remove('intro-active');
-        intro.classList.add('is-leaving');
         if (app) app.inert = false;
-        const removeDelay = reduceMotion ? 140 : 760;
-        window.setTimeout(() => intro.remove(), removeDelay);
+        frame.style.opacity = '0';
+        window.setTimeout(() => frame.remove(), reduceMotion ? 140 : 920);
     };
 
-    const tick = now => {
-        if (completed) return;
-        const elapsed = now - startedAt;
-        // Ease quickly through real startup work, then hold just below completion.
-        const staged = Math.min(96, 96 * (1 - Math.exp(-elapsed / 820)));
-        setProgress(staged);
-        if (applicationReady && elapsed >= minimumRunTime) close();
-        else frameId = requestAnimationFrame(tick);
+    const onMessage = event => {
+        if (event.source !== frame.contentWindow) return;
+        if (event.data?.type === 'kts-intro-loaded') {
+            introLoaded = true;
+            notifyReady();
+        } else if (event.data?.type === 'kts-intro-complete') {
+            window.removeEventListener('message', onMessage);
+            close();
+        }
     };
-
-    skip?.addEventListener('click', close);
-    document.addEventListener('keydown', event => {
-        if (event.key === 'Escape' && !completed) close();
-    }, { once: true });
-    frameId = requestAnimationFrame(tick);
+    window.addEventListener('message', onMessage);
+    frame.addEventListener('load', () => { introLoaded = true; notifyReady(); }, { once: true });
 
     return {
-        ready() { applicationReady = true; },
-        fail() { if (status) status.textContent = 'Opening workspace'; applicationReady = true; }
+        ready() { applicationReady = true; notifyReady(); },
+        fail() { applicationReady = true; notifyReady(); }
     };
 }
 
