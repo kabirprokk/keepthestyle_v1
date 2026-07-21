@@ -16,8 +16,9 @@
     let frameId = 0;
 
     const setProgress = value => {
-        const rounded = Math.max(0, Math.min(100, Math.round(value)));
-        document.documentElement.style.setProperty('--intro-progress', `${rounded}%`);
+        const precise = Math.max(0, Math.min(100, value));
+        const rounded = Math.round(precise);
+        document.documentElement.style.setProperty('--intro-progress', `${precise.toFixed(2)}%`);
         percent.value = `${rounded}%`;
         status.textContent = rounded < 25 ? 'Preparing your canvas'
             : rounded < 52 ? 'Loading creative tools'
