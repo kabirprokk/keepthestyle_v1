@@ -257,7 +257,7 @@ class PropertiesManager {
             { key: 'transform', label: 'Transform', type: 'text', default: 'none' },
             { key: 'transformOrigin', label: 'Transform Origin', type: 'text', default: 'center center' },
             { key: 'clipPath', label: 'Clip Path', type: 'text', default: 'none' },
-            { key: 'perspective', label: 'Perspective', type: 'number', units: ['px'], default: 'none' },
+            { key: 'perspective', label: 'Perspective', type: 'number', units: ['px', 'none'], min: 0, max: 2000, default: 'none' },
             { key: 'isolation', label: 'Isolation', type: 'select', options: ['auto', 'isolate'], default: 'auto' }
         );
 
@@ -404,7 +404,7 @@ class PropertiesManager {
                         
                         if (document.activeElement !== input) {
                             input.value = parsed.value;
-                            if (parsed.unit === 'auto') {
+                            if (parsed.unit === 'auto' || parsed.unit === 'none') {
                                 input.disabled = true;
                                 input.style.opacity = '0.5';
                             } else {
@@ -423,7 +423,7 @@ class PropertiesManager {
                             
                             const slider = wrapper.querySelector('.property-slider');
                             if (slider && document.activeElement !== slider) {
-                                if (parsed.unit === 'auto') {
+                                if (parsed.unit === 'auto' || parsed.unit === 'none') {
                                     slider.style.display = 'none';
                                 } else {
                                     slider.style.display = 'block';
@@ -592,11 +592,6 @@ class PropertiesManager {
                     
                 const styles = { ...element.styles };
                 sideKeys.forEach(k => delete styles[k]);
-                
-                // If re-linking shadow, also revert boxShadow to none
-                if (propConfig.expandedKey === 'shadowExpanded') {
-                    styles.boxShadow = 'none';
-                }
                 
                 this.store.updateElement(element.id, { styles });
                 this[propConfig.expandedKey] = false;
@@ -836,7 +831,7 @@ class PropertiesManager {
         input.className = 'property-number';
         input.dataset.key = propConfig.key;
         input.value = parsed.value;
-        if (parsed.unit === 'auto') {
+        if (parsed.unit === 'auto' || parsed.unit === 'none') {
             input.disabled = true;
             input.style.opacity = '0.5';
         }
@@ -869,7 +864,7 @@ class PropertiesManager {
         slider.value = parsed.value !== '' ? parsed.value : 0;
         
         // Show/hide slider based on unit
-        if (parsed.unit === 'auto') {
+        if (parsed.unit === 'auto' || parsed.unit === 'none') {
             slider.style.display = 'none';
         }
         
@@ -885,12 +880,12 @@ class PropertiesManager {
         // Change event for unit selector
         unitSelect.addEventListener('change', (e) => {
             const currentUnit = e.target.value;
-            if (currentUnit === 'auto') {
+            if (currentUnit === 'auto' || currentUnit === 'none') {
                 input.value = '';
                 input.disabled = true;
                 input.style.opacity = '0.5';
                 slider.style.display = 'none';
-                onChange('auto');
+                onChange(currentUnit);
             } else {
                 input.disabled = false;
                 input.style.opacity = '1';
@@ -1138,6 +1133,10 @@ class PropertiesManager {
     resetProperty(prop, element) {
         if (prop.key === 'content') return this.updateProperty(prop.key, prop.default || '', element);
         if (this.isMetaProperty(prop.key)) return this.updateProperty(prop.key, '', element);
+        if (prop.key.startsWith('shadow') && prop.key !== 'boxShadow') {
+            const defaults = { shadowType: 'none', shadowX: 0, shadowY: 0, shadowBlur: 0, shadowSpread: 0, shadowColor: '#000000' };
+            return this.updateShadowProperty(prop.key, defaults[prop.key], element);
+        }
         const targets = this.store.getState().selectedElements;
         this.store.updateElements(targets.map(id => {
             const target = this.store.getState().elements.find(item => item.id === id);
@@ -1149,19 +1148,33 @@ class PropertiesManager {
     }
 
     updateShadowProperty(key, val, element) {
-        const shadowVal = element.styles['boxShadow'] || 'none';
-        const parsed = this.parseBoxShadow(shadowVal);
-        
-        if (key === 'shadowType') parsed.type = val;
-        else if (key === 'shadowX') parsed.x = parseFloat(val) || 0;
-        else if (key === 'shadowY') parsed.y = parseFloat(val) || 0;
-        else if (key === 'shadowBlur') parsed.blur = parseFloat(val) || 0;
-        else if (key === 'shadowSpread') parsed.spread = parseFloat(val) || 0;
-        else if (key === 'shadowColor') parsed.color = val;
-        
-        const finalShadow = this.stringifyBoxShadow(parsed);
-        const styles = { ...element.styles, boxShadow: finalShadow };
-        this.store.updateElement(element.id, { styles });
+        const state = this.store.getState();
+        const targets = state.selectedElements.length ? state.selectedElements : [element.id];
+        const updates = targets.map(id => {
+            const target = state.elements.find(item => item.id === id);
+            if (!target) return null;
+            const parsed = this.parseBoxShadow(target.styles?.boxShadow || 'none');
+
+            if (key === 'shadowType') {
+                parsed.type = val;
+                // Make a newly enabled shadow immediately visible and useful.
+                if (val !== 'none' && parsed.x === 0 && parsed.y === 0 && parsed.blur === 0 && parsed.spread === 0) {
+                    parsed.y = 8;
+                    parsed.blur = 24;
+                }
+            } else {
+                // Editing any shadow component enables an outset shadow automatically.
+                if (parsed.type === 'none') parsed.type = 'outset';
+                if (key === 'shadowX') parsed.x = parseFloat(val) || 0;
+                else if (key === 'shadowY') parsed.y = parseFloat(val) || 0;
+                else if (key === 'shadowBlur') parsed.blur = Math.max(0, parseFloat(val) || 0);
+                else if (key === 'shadowSpread') parsed.spread = parseFloat(val) || 0;
+                else if (key === 'shadowColor') parsed.color = val || '#000000';
+            }
+
+            return { id, updates: { styles: { ...target.styles, boxShadow: this.stringifyBoxShadow(parsed) } } };
+        }).filter(Boolean);
+        this.store.updateElements(updates);
     }
 
     parseBoxShadow(shadowStr) {
@@ -1197,8 +1210,8 @@ class PropertiesManager {
     }
 
     parseCSSValueAndUnit(colorVal, defaultUnit = 'px') {
-        if (colorVal === undefined || colorVal === null || colorVal === '' || colorVal === 'auto') {
-            return { value: '', unit: 'auto' };
+        if (colorVal === undefined || colorVal === null || colorVal === '' || colorVal === 'auto' || colorVal === 'none') {
+            return { value: '', unit: colorVal === 'none' ? 'none' : 'auto' };
         }
         const valStr = String(colorVal).trim();
         const num = parseFloat(valStr);
